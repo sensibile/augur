@@ -16,6 +16,9 @@ Generated project facts live at `docs/generated/project-facts.md`.
 
 Korean documentation is available in [README.ko.md](README.ko.md).
 
+The canonical rule storage format is documented in
+[docs/rule-json-format.md](docs/rule-json-format.md).
+
 ## Modules
 
 - `augur-rule-core`: pure rule domain, validation, and evaluation
