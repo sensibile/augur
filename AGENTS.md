@@ -24,6 +24,7 @@ Common commands:
 ./gradlew test
 ./gradlew koverHtmlReport
 mise run lint
+mise run architecture:check
 mise run coverage
 mise run coverage:check
 mise run docs:check
@@ -40,7 +41,8 @@ mise run docs:facts
 - Put side effects behind ports or in outer modules.
 - Prefer Gradle module boundaries over package-only boundaries as the project
   grows.
-- Add ArchUnit checks once adapter, SDK, API, or infra modules exist.
+- Run `mise run architecture:check` after changing modules or dependencies.
+- Add ArchUnit checks later if module-boundary rules outgrow shell checks.
 - Prefer function composition and domain types over large conditional branches
   in important rule logic.
 - When branching is unavoidable, isolate it at selection boundaries and keep the
@@ -80,6 +82,18 @@ Do not add these to `augur-rule-core`:
 
 Serialization belongs in a future adapter module such as `augur-rule-json`.
 SDK fetch/cache behavior belongs outside the core.
+
+## Module Boundary Rules
+
+- `augur-rule-core` is the functional core and must not depend on other Augur
+  modules.
+- `augur-rule-json` is a serialization adapter. Its production code may depend
+  on `augur-rule-core`, but not on `augur-rule-sdk`.
+- `augur-rule-sdk` is a rule evaluation consumer facade. Its production code may
+  depend on `augur-rule-core`, but not on `augur-rule-json`, HTTP, storage, or
+  admin/API modules.
+- Rule creation, editing, persistence, approval, and audit workflows belong in
+  admin/API modules, not in the SDK.
 
 ## Domain Modeling
 

@@ -44,6 +44,10 @@ run = "scripts/detekt.sh"
 description = "Run local Kotlin quality checks"
 depends = ["lint:ktlint", "lint:detekt"]
 
+[tasks."architecture:check"]
+description = "Check module dependency boundaries"
+run = "scripts/architecture-check.sh"
+
 [tasks."docs:facts"]
 description = "Generate factual project documentation for AI-assisted docs updates"
 run = "scripts/docs-facts.sh"
