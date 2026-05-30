@@ -18,6 +18,8 @@ Korean documentation is available in [README.ko.md](README.ko.md).
 
 The canonical rule storage format is documented in
 [docs/rule-json-format.md](docs/rule-json-format.md).
+Admin/API and snapshot boundaries are documented in
+[docs/adr/0002-admin-api-and-snapshot-boundaries.md](docs/adr/0002-admin-api-and-snapshot-boundaries.md).
 
 ## Modules
 

@@ -195,6 +195,9 @@ not supported by code or generated facts.
 
 Architecture decisions live under `docs/adr`.
 
+Before adding admin/API, storage, SDK fetching, or cache modules, read
+`docs/adr/0002-admin-api-and-snapshot-boundaries.md`.
+
 ## Git Hygiene
 
 - Do not revert user changes unless explicitly asked.
