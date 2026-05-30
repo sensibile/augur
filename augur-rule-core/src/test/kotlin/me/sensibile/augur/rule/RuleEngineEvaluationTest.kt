@@ -240,6 +240,24 @@ class RuleEngineEvaluationTest {
     }
 
     @Test
+    fun `trace exposes evaluated matched and missed rules`() {
+        val missedRuleId = ruleId("01890f2e-7cc3-7cc3-8c4f-123456789abc")
+        val matchedRuleId = ruleId("01890f2e-7cc3-7cc3-8c4f-123456789abd")
+        val trace =
+            EvaluationTrace(
+                listOf(
+                    RuleEvaluationTrace(missedRuleId, matched = false),
+                    RuleEvaluationTrace(matchedRuleId, matched = true),
+                ),
+            )
+
+        assertEquals(listOf(missedRuleId, matchedRuleId), trace.evaluatedRuleIds)
+        assertEquals(matchedRuleId, trace.matchedRuleId)
+        assertEquals(listOf(RuleEvaluationTrace(matchedRuleId, matched = true)), trace.matched)
+        assertEquals(listOf(RuleEvaluationTrace(missedRuleId, matched = false)), trace.missed)
+    }
+
+    @Test
     fun `evaluates not condition`() {
         val actual =
             evaluateSingleRule(

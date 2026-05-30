@@ -4,6 +4,8 @@ object RuleSetValidator {
     fun validate(ruleSet: RuleSet): Outcome<RuleSetValidationError, ValidRuleSet> {
         val violations = mutableListOf<RuleSetViolation>()
 
+        violations += validateRuleIds(ruleSet)
+
         ruleSet.flags.forEach { (flagKey, flag) ->
             if (flagKey != flag.key) {
                 violations += RuleSetViolation.FlagKeyMismatch(flagKey, flag.key)
@@ -19,21 +21,43 @@ object RuleSetValidator {
         }
     }
 
-    private fun validateFlag(flag: Flag): List<RuleSetViolation> {
-        val duplicateRuleIds =
-            flag.rules
-                .groupingBy { it.id }
-                .eachCount()
-                .filterValues { count -> count > 1 }
-                .keys
+    private fun validateRuleIds(ruleSet: RuleSet): List<RuleSetViolation> =
+        ruleSet.flags.values
+            .flatMap { flag ->
+                flag.rules.map { rule ->
+                    RuleReference(flag.key, rule.id)
+                }
+            }.groupBy(RuleReference::ruleId)
+            .filterValues { references -> references.size > 1 }
+            .map { (ruleId, references) ->
+                RuleSetViolation.DuplicateRuleId(
+                    ruleId = ruleId,
+                    flagKeys = references.map(RuleReference::flagKey).distinct(),
+                )
+            }
 
-        return duplicateRuleIds.map { ruleId ->
-            RuleSetViolation.DuplicateRuleId(flag.key, ruleId)
-        } +
+    private fun validateFlag(flag: Flag): List<RuleSetViolation> =
+        validateServeTypes(flag) +
             flag.rules.flatMap { rule ->
                 validateCondition(flag.key, rule.id, rule.condition)
             }
-    }
+
+    private fun validateServeTypes(flag: Flag): List<RuleSetViolation> =
+        flag.rules
+            .filter { rule -> rule.serve.type() != flag.defaultValue.type() }
+            .map { rule ->
+                RuleSetViolation.ServeTypeMismatch(
+                    flagKey = flag.key,
+                    ruleId = rule.id,
+                    expected = flag.defaultValue.type(),
+                    actual = rule.serve.type(),
+                )
+            }
+
+    private data class RuleReference(
+        val flagKey: FlagKey,
+        val ruleId: RuleId,
+    )
 
     private fun validateCondition(
         flagKey: FlagKey,
@@ -103,7 +127,8 @@ object RuleSetValidator {
             Operator.Missing,
             -> RuleValueExpectation.NoValue
 
-            Operator.Contains,
+            Operator.Contains -> RuleValueExpectation.ContainsElement
+
             Operator.StartsWith,
             Operator.EndsWith,
             -> RuleValueExpectation.String
@@ -126,8 +151,15 @@ sealed interface RuleSetViolation {
     ) : RuleSetViolation
 
     data class DuplicateRuleId(
+        val ruleId: RuleId,
+        val flagKeys: List<FlagKey>,
+    ) : RuleSetViolation
+
+    data class ServeTypeMismatch(
         val flagKey: FlagKey,
         val ruleId: RuleId,
+        val expected: RuleValueType,
+        val actual: RuleValueType,
     ) : RuleSetViolation
 
     data class EmptyConditionBranch(
@@ -161,6 +193,7 @@ enum class RuleValueType {
 
 enum class RuleValueExpectation {
     AnyComparable,
+    ContainsElement,
     List,
     Number,
     String,
@@ -179,6 +212,7 @@ fun RuleValue.type(): RuleValueType =
 fun RuleValueExpectation.accepts(value: RuleValue): Boolean =
     when (this) {
         RuleValueExpectation.AnyComparable -> value !is RuleValue.ListValue
+        RuleValueExpectation.ContainsElement -> value !is RuleValue.ListValue
         RuleValueExpectation.List -> value is RuleValue.ListValue
         RuleValueExpectation.Number -> value is RuleValue.NumberValue
         RuleValueExpectation.String -> value is RuleValue.StringValue

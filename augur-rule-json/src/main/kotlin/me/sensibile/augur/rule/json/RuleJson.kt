@@ -82,6 +82,10 @@ sealed interface RuleJsonError {
     data class InvalidRuleSet(
         val error: RuleSetValidationError,
     ) : RuleJsonError
+
+    data class DuplicateFlagKey(
+        val key: FlagKey,
+    ) : RuleJsonError
 }
 
 @Serializable
@@ -93,11 +97,30 @@ private data class RuleSetJson(
         val version = RuleSetVersion.of(version).mapError()
         val flags = flags.traverse { flag -> flag.toDomain() }
 
-        return version.zip(flags) { version, flags ->
-            RuleSet(
-                version = version,
-                flags = flags.associateBy { flag -> flag.key },
+        return version
+            .zip(flags) { version, flags -> version to flags }
+            .flatMap { (version, flags) ->
+                flags.toRuleSet(version)
+            }
+    }
+
+    private fun List<Flag>.toRuleSet(version: RuleSetVersion): Outcome<RuleJsonError, RuleSet> {
+        val duplicatedKey =
+            groupingBy { flag -> flag.key }
+                .eachCount()
+                .entries
+                .firstOrNull { (_, count) -> count > 1 }
+                ?.key
+
+        return if (duplicatedKey == null) {
+            Outcome.Ok(
+                RuleSet(
+                    version = version,
+                    flags = associateBy { flag -> flag.key },
+                ),
             )
+        } else {
+            Outcome.Err(RuleJsonError.DuplicateFlagKey(duplicatedKey))
         }
     }
 

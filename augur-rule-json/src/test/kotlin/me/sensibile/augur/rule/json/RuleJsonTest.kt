@@ -202,6 +202,37 @@ class RuleJsonTest {
         assertIs<Outcome.Err<RuleJsonError.InvalidRuleSet>>(valid)
     }
 
+    @Test
+    fun `returns duplicate flag key error before flags are associated by key`() {
+        val json =
+            """
+            {
+              "version": 1,
+              "flags": [
+                {
+                  "key": "new_checkout",
+                  "enabled": true,
+                  "defaultValue": false,
+                  "rules": []
+                },
+                {
+                  "key": "new_checkout",
+                  "enabled": true,
+                  "defaultValue": true,
+                  "rules": []
+                }
+              ]
+            }
+            """.trimIndent()
+
+        val actual = RuleJson.decodeRuleSet(json)
+
+        assertEquals(
+            Outcome.Err(RuleJsonError.DuplicateFlagKey(flagKey("new_checkout"))),
+            actual,
+        )
+    }
+
     private fun bool(value: Boolean): RuleValue.BooleanValue = RuleValue.boolean(value)
 
     private fun string(value: String): RuleValue.StringValue = RuleValue.string(value)

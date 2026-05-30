@@ -35,6 +35,18 @@ sealed interface EvaluationError {
 data class EvaluationTrace(
     val rules: List<RuleEvaluationTrace>,
 ) {
+    val evaluatedRuleIds: List<RuleId>
+        get() = rules.map(RuleEvaluationTrace::ruleId)
+
+    val matchedRuleId: RuleId?
+        get() = rules.firstOrNull(RuleEvaluationTrace::matched)?.ruleId
+
+    val matched: List<RuleEvaluationTrace>
+        get() = rules.filter(RuleEvaluationTrace::matched)
+
+    val missed: List<RuleEvaluationTrace>
+        get() = rules.filterNot(RuleEvaluationTrace::matched)
+
     companion object {
         fun empty(): EvaluationTrace = EvaluationTrace(emptyList())
     }
