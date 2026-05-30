@@ -22,7 +22,7 @@ Korean documentation is available in [README.ko.md](README.ko.md).
 - `augur-rule-json`: JSON storage format adapter
 - `augur-rule-sdk`: Kotlin-friendly request builders and SDK conveniences
 
-## Minimal Usage
+## End-To-End Usage
 
 ```kotlin
 val ruleSet =
@@ -46,16 +46,6 @@ val request =
         is Outcome.Ok -> result.value
     }
 
-val decision =
-    RuleEngine.evaluate(
-        ruleSet = ruleSet,
-        request = request,
-    )
-```
-
-Typed evaluation APIs are available when the expected flag type is known:
-
-```kotlin
 val enabled =
     RuleEngine.evaluateBoolean(
         ruleSet = ruleSet,
@@ -63,5 +53,6 @@ val enabled =
     )
 ```
 
+Use `RuleEngine.evaluate` when a generic `RuleValue` decision is preferred.
 Use `decodeRuleSet` when working with draft or editable rules. Use
 `decodeValidRuleSet` for evaluation-ready snapshots.

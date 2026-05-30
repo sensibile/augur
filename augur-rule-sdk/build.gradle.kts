@@ -6,5 +6,6 @@ plugins {
 dependencies {
     api(project(":augur-rule-core"))
 
+    testImplementation(project(":augur-rule-json"))
     testImplementation(libs.kotlin.test.junit5)
 }

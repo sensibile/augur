@@ -38,6 +38,7 @@ Use it as factual source material when updating human-authored documentation.
 ### `augur-rule-sdk`
 
 - `api(project(":augur-rule-core"))`
+- `testImplementation(project(":augur-rule-json"))`
 - `testImplementation(libs.kotlin.test.junit5)`
 
 ## Kotlin Declarations
