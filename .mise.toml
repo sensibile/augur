@@ -1,0 +1,57 @@
+[tools]
+java = "temurin-25"
+
+[tools."github:detekt/detekt"]
+version = "2.0.0-alpha.3"
+prerelease = true
+asset_pattern = "detekt-cli-2.0.0-alpha.3.zip"
+bin_path = "detekt-cli-2.0.0-alpha.3/bin"
+rename_exe = "detekt"
+
+[tasks.bootstrap]
+description = "Install local development tools"
+run = "scripts/bootstrap-dev.sh"
+
+[tasks.test]
+description = "Run the Gradle test suite through the wrapper"
+run = "./gradlew test"
+
+[tasks.coverage]
+description = "Generate the Kover HTML coverage report"
+run = "./gradlew koverHtmlReport"
+
+[tasks."coverage:xml"]
+description = "Generate the Kover XML coverage report"
+run = "./gradlew koverXmlReport"
+
+[tasks."coverage:check"]
+description = "Print Kover coverage summary without enforcing thresholds"
+run = "./gradlew koverLog"
+
+[tasks."lint:ktlint"]
+description = "Run ktlint on changed Kotlin files"
+run = "scripts/ktlint-check-changed.sh"
+
+[tasks."format:ktlint"]
+description = "Format changed Kotlin files with ktlint"
+run = "scripts/ktlint-format-changed.sh"
+
+[tasks."lint:detekt"]
+description = "Run detekt CLI against Kotlin source sets"
+run = "scripts/detekt.sh"
+
+[tasks.lint]
+description = "Run local Kotlin quality checks"
+depends = ["lint:ktlint", "lint:detekt"]
+
+[tasks."docs:facts"]
+description = "Generate factual project documentation for AI-assisted docs updates"
+run = "scripts/docs-facts.sh"
+
+[tasks."docs:facts:check"]
+description = "Check generated project documentation facts"
+run = "scripts/docs-facts.sh --check"
+
+[tasks."docs:check"]
+description = "Run documentation consistency checks"
+depends = ["docs:facts:check"]
