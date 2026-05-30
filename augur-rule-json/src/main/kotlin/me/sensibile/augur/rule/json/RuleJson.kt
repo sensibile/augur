@@ -19,12 +19,12 @@ import me.sensibile.augur.rule.Outcome
 import me.sensibile.augur.rule.Rule
 import me.sensibile.augur.rule.RuleId
 import me.sensibile.augur.rule.RuleSet
+import me.sensibile.augur.rule.RuleSetSnapshot
 import me.sensibile.augur.rule.RuleSetValidationError
 import me.sensibile.augur.rule.RuleSetValidator
 import me.sensibile.augur.rule.RuleSetVersion
 import me.sensibile.augur.rule.RuleValue
 import me.sensibile.augur.rule.RuleValueType
-import me.sensibile.augur.rule.ValidRuleSet
 import me.sensibile.augur.rule.ValueObjectError
 import me.sensibile.augur.rule.flatMap
 import me.sensibile.augur.rule.map
@@ -54,7 +54,13 @@ object RuleJson {
             Outcome.Err(RuleJsonError.InvalidJson(exception.message.orEmpty()))
         }
 
-    fun decodeValidRuleSet(value: String): Outcome<RuleJsonError, ValidRuleSet> =
+    @Deprecated(
+        message = "Use decodeRuleSetSnapshot for evaluation-ready rule snapshots.",
+        replaceWith = ReplaceWith("decodeRuleSetSnapshot(value)"),
+    )
+    fun decodeValidRuleSet(value: String): Outcome<RuleJsonError, RuleSetSnapshot> = decodeRuleSetSnapshot(value)
+
+    fun decodeRuleSetSnapshot(value: String): Outcome<RuleJsonError, RuleSetSnapshot> =
         decodeRuleSet(value).flatMap { ruleSet ->
             RuleSetValidator.validate(ruleSet).mapValidationError()
         }
@@ -365,7 +371,7 @@ private fun <A> Outcome<ValueObjectError, A>.mapError(): Outcome<RuleJsonError, 
         is Outcome.Ok -> Outcome.Ok(value)
     }
 
-private fun Outcome<RuleSetValidationError, ValidRuleSet>.mapValidationError(): Outcome<RuleJsonError, ValidRuleSet> =
+private fun Outcome<RuleSetValidationError, RuleSetSnapshot>.mapValidationError(): Outcome<RuleJsonError, RuleSetSnapshot> =
     when (this) {
         is Outcome.Err -> Outcome.Err(RuleJsonError.InvalidRuleSet(error))
         is Outcome.Ok -> Outcome.Ok(value)

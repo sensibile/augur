@@ -17,8 +17,8 @@ class RuleJsonEngineIntegrationTest {
     @Test
     fun `decodes valid json and evaluates matched rule`() {
         val ruleSet =
-            when (val decoded = RuleJson.decodeValidRuleSet(sampleRuleSetJson())) {
-                is Outcome.Err -> error("Expected valid ruleset: ${decoded.error}")
+            when (val decoded = RuleJson.decodeRuleSetSnapshot(sampleRuleSetJson())) {
+                is Outcome.Err -> error("Expected rule set snapshot: ${decoded.error}")
                 is Outcome.Ok -> decoded.value
             }
 
@@ -43,8 +43,8 @@ class RuleJsonEngineIntegrationTest {
     @Test
     fun `decodes valid json and evaluates default when no rule matches`() {
         val ruleSet =
-            when (val decoded = RuleJson.decodeValidRuleSet(sampleRuleSetJson())) {
-                is Outcome.Err -> error("Expected valid ruleset: ${decoded.error}")
+            when (val decoded = RuleJson.decodeRuleSetSnapshot(sampleRuleSetJson())) {
+                is Outcome.Err -> error("Expected rule set snapshot: ${decoded.error}")
                 is Outcome.Ok -> decoded.value
             }
 
@@ -81,7 +81,7 @@ class RuleJsonEngineIntegrationTest {
                     """.trimIndent(),
             )
 
-        val decoded = RuleJson.decodeValidRuleSet(json)
+        val decoded = RuleJson.decodeRuleSetSnapshot(json)
 
         assertIs<Outcome.Err<RuleJsonError.InvalidRuleSet>>(decoded)
     }

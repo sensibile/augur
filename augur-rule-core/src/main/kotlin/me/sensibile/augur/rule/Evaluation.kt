@@ -80,7 +80,7 @@ object RuleEngine {
         }
 
     fun evaluate(
-        ruleSet: ValidRuleSet,
+        ruleSet: RuleSetSnapshot,
         request: EvaluationRequest,
     ): Outcome<EvaluationError, EvaluationDecision> = RuleEvaluator.evaluate(ruleSet, request)
 
@@ -90,7 +90,7 @@ object RuleEngine {
     ): Outcome<EvaluationError, TypedEvaluationDecision<Boolean>> = evaluate(ruleSet, request).flatMap(::expectBoolean)
 
     fun evaluateBoolean(
-        ruleSet: ValidRuleSet,
+        ruleSet: RuleSetSnapshot,
         request: EvaluationRequest,
     ): Outcome<EvaluationError, TypedEvaluationDecision<Boolean>> = evaluate(ruleSet, request).flatMap(::expectBoolean)
 
@@ -100,7 +100,7 @@ object RuleEngine {
     ): Outcome<EvaluationError, TypedEvaluationDecision<String>> = evaluate(ruleSet, request).flatMap(::expectString)
 
     fun evaluateString(
-        ruleSet: ValidRuleSet,
+        ruleSet: RuleSetSnapshot,
         request: EvaluationRequest,
     ): Outcome<EvaluationError, TypedEvaluationDecision<String>> = evaluate(ruleSet, request).flatMap(::expectString)
 
@@ -110,7 +110,7 @@ object RuleEngine {
     ): Outcome<EvaluationError, TypedEvaluationDecision<Double>> = evaluate(ruleSet, request).flatMap(::expectNumber)
 
     fun evaluateNumber(
-        ruleSet: ValidRuleSet,
+        ruleSet: RuleSetSnapshot,
         request: EvaluationRequest,
     ): Outcome<EvaluationError, TypedEvaluationDecision<Double>> = evaluate(ruleSet, request).flatMap(::expectNumber)
 
@@ -120,7 +120,7 @@ object RuleEngine {
     ): Outcome<EvaluationError, TypedEvaluationDecision<List<RuleValue>>> = evaluate(ruleSet, request).flatMap(::expectList)
 
     fun evaluateList(
-        ruleSet: ValidRuleSet,
+        ruleSet: RuleSetSnapshot,
         request: EvaluationRequest,
     ): Outcome<EvaluationError, TypedEvaluationDecision<List<RuleValue>>> = evaluate(ruleSet, request).flatMap(::expectList)
 }
@@ -159,7 +159,7 @@ private fun EvaluationDecision.typeMismatch(expected: RuleValueType): Evaluation
 
 private object RuleEvaluator {
     fun evaluate(
-        ruleSet: ValidRuleSet,
+        ruleSet: RuleSetSnapshot,
         request: EvaluationRequest,
     ): Outcome<EvaluationError, EvaluationDecision> {
         val validatedRuleSet = ruleSet.value

@@ -78,7 +78,7 @@ Use it as factual source material when updating human-authored documentation.
 - `data class Flag` (augur-rule-core/src/main/kotlin/me/sensibile/augur/rule/RuleSet.kt)
 - `data class Rule` (augur-rule-core/src/main/kotlin/me/sensibile/augur/rule/RuleSet.kt)
 - `object RuleSetValidator` (augur-rule-core/src/main/kotlin/me/sensibile/augur/rule/RuleSetValidator.kt)
-- `value class ValidRuleSet` (augur-rule-core/src/main/kotlin/me/sensibile/augur/rule/RuleSetValidator.kt)
+- `value class RuleSetSnapshot` (augur-rule-core/src/main/kotlin/me/sensibile/augur/rule/RuleSetValidator.kt)
 - `data class RuleSetValidationError` (augur-rule-core/src/main/kotlin/me/sensibile/augur/rule/RuleSetValidator.kt)
 - `sealed interface RuleSetViolation` (augur-rule-core/src/main/kotlin/me/sensibile/augur/rule/RuleSetValidator.kt)
 - `data class FlagKeyMismatch` (augur-rule-core/src/main/kotlin/me/sensibile/augur/rule/RuleSetValidator.kt)

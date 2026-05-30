@@ -24,8 +24,8 @@ canonical rule 저장 포맷은 [docs/rule-json-format.md](docs/rule-json-format
 
 ```kotlin
 val ruleSet =
-    when (val result = RuleJson.decodeValidRuleSet(json)) {
-        is Outcome.Err -> error("Invalid rule set: ${result.error}")
+    when (val result = RuleJson.decodeRuleSetSnapshot(json)) {
+        is Outcome.Err -> error("Invalid rule set snapshot: ${result.error}")
         is Outcome.Ok -> result.value
     }
 
@@ -42,7 +42,7 @@ val enabled =
 ```
 
 일반 `RuleValue` decision이 필요할 때는 `RuleEngine.evaluate`를 직접 사용합니다.
-수정 중인 draft rule을 다룰 때는 `decodeRuleSet`을 사용하고, 평가 가능한 snapshot이 필요할 때는 `decodeValidRuleSet`을 사용합니다.
+수정 중인 draft rule을 다룰 때는 `decodeRuleSet`을 사용하고, 평가 가능한 snapshot이 필요할 때는 `decodeRuleSetSnapshot`을 사용합니다.
 
 ## 개발 명령
 

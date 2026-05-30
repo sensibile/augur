@@ -11,9 +11,9 @@ import me.sensibile.augur.rule.Outcome
 import me.sensibile.augur.rule.Rule
 import me.sensibile.augur.rule.RuleId
 import me.sensibile.augur.rule.RuleSet
+import me.sensibile.augur.rule.RuleSetSnapshot
 import me.sensibile.augur.rule.RuleSetVersion
 import me.sensibile.augur.rule.RuleValue
-import me.sensibile.augur.rule.ValidRuleSet
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
@@ -183,20 +183,20 @@ class RuleJsonTest {
     }
 
     @Test
-    fun `decodes valid ruleset when json passes validation`() {
+    fun `decodes rule set snapshot when json passes validation`() {
         val json = ruleSetJson(condition = predicateJson())
 
-        val actual = RuleJson.decodeValidRuleSet(json)
+        val actual = RuleJson.decodeRuleSetSnapshot(json)
 
-        assertIs<Outcome.Ok<ValidRuleSet>>(actual)
+        assertIs<Outcome.Ok<RuleSetSnapshot>>(actual)
     }
 
     @Test
-    fun `returns invalid ruleset when decoded json fails validation`() {
+    fun `returns invalid rule set snapshot when decoded json fails validation`() {
         val json = ruleSetJson(condition = predicateJson(op = "GreaterThan", value = """"19""""))
 
         val raw = RuleJson.decodeRuleSet(json)
-        val valid = RuleJson.decodeValidRuleSet(json)
+        val valid = RuleJson.decodeRuleSetSnapshot(json)
 
         assertIs<Outcome.Ok<RuleSet>>(raw)
         assertIs<Outcome.Err<RuleJsonError.InvalidRuleSet>>(valid)

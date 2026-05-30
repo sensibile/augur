@@ -29,8 +29,8 @@ The canonical rule storage format is documented in
 
 ```kotlin
 val ruleSet =
-    when (val result = RuleJson.decodeValidRuleSet(json)) {
-        is Outcome.Err -> error("Invalid rule set: ${result.error}")
+    when (val result = RuleJson.decodeRuleSetSnapshot(json)) {
+        is Outcome.Err -> error("Invalid rule set snapshot: ${result.error}")
         is Outcome.Ok -> result.value
     }
 
@@ -48,4 +48,4 @@ val enabled =
 
 Use `RuleEngine.evaluate` directly when a generic `RuleValue` decision is preferred.
 Use `decodeRuleSet` when working with draft or editable rules. Use
-`decodeValidRuleSet` for evaluation-ready snapshots.
+`decodeRuleSetSnapshot` for evaluation-ready snapshots.

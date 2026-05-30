@@ -1,7 +1,7 @@
 package me.sensibile.augur.rule
 
 object RuleSetValidator {
-    fun validate(ruleSet: RuleSet): Outcome<RuleSetValidationError, ValidRuleSet> {
+    fun validate(ruleSet: RuleSet): Outcome<RuleSetValidationError, RuleSetSnapshot> {
         val violations = mutableListOf<RuleSetViolation>()
 
         violations += validateRuleIds(ruleSet)
@@ -15,7 +15,7 @@ object RuleSetValidator {
         }
 
         return if (violations.isEmpty()) {
-            Outcome.Ok(ValidRuleSet(ruleSet))
+            Outcome.Ok(RuleSetSnapshot(ruleSet))
         } else {
             Outcome.Err(RuleSetValidationError(violations))
         }
@@ -136,9 +136,11 @@ object RuleSetValidator {
 }
 
 @JvmInline
-value class ValidRuleSet(
+value class RuleSetSnapshot(
     val value: RuleSet,
 )
+
+typealias ValidRuleSet = RuleSetSnapshot
 
 data class RuleSetValidationError(
     val violations: List<RuleSetViolation>,

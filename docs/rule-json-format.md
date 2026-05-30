@@ -19,7 +19,7 @@ treated as evaluation-ready.
 - `flags`: array of flag definitions. Flag keys must be unique within the file.
 
 Use `RuleJson.decodeRuleSet` for draft/editable JSON. Use
-`RuleJson.decodeValidRuleSet` for evaluation-ready snapshots.
+`RuleJson.decodeRuleSetSnapshot` for evaluation-ready snapshots.
 
 ## Flag
 
@@ -97,7 +97,7 @@ Augur uses `type` as the condition discriminator.
 ```
 
 Matches when every child condition matches. `conditions` must not be empty in a
-valid rule set.
+rule set snapshot.
 
 ### Any
 
@@ -109,7 +109,7 @@ valid rule set.
 ```
 
 Matches when at least one child condition matches. `conditions` must not be
-empty in a valid rule set.
+empty in a rule set snapshot.
 
 ### Not
 

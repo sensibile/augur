@@ -13,7 +13,7 @@ internal object RuleFixtures {
             flags = flags.associateBy { it.key },
         )
 
-    fun valid(ruleSet: RuleSet): ValidRuleSet =
+    fun valid(ruleSet: RuleSet): RuleSetSnapshot =
         when (val validation = RuleSetValidator.validate(ruleSet)) {
             is Outcome.Err -> error("Invalid test ruleset: ${validation.error}")
             is Outcome.Ok -> validation.value

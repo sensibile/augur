@@ -17,7 +17,7 @@ import kotlin.test.assertEquals
 
 class RuleSetValidatorTest {
     @Test
-    fun `returns valid ruleset when structure is valid`() {
+    fun `returns rule set snapshot when structure is valid`() {
         val ruleSet =
             ruleSet(
                 flag(
@@ -39,7 +39,7 @@ class RuleSetValidatorTest {
 
         val actual = RuleSetValidator.validate(ruleSet)
 
-        assertEquals(Outcome.Ok(ValidRuleSet(ruleSet)), actual)
+        assertEquals(Outcome.Ok(RuleSetSnapshot(ruleSet)), actual)
     }
 
     @Test
@@ -262,7 +262,7 @@ class RuleSetValidatorTest {
 
         val actual = RuleSetValidator.validate(ruleSet)
 
-        assertEquals(Outcome.Ok(ValidRuleSet(ruleSet)), actual)
+        assertEquals(Outcome.Ok(RuleSetSnapshot(ruleSet)), actual)
     }
 
     @Test

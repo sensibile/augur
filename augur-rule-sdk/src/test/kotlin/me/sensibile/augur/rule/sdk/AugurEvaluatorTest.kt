@@ -25,7 +25,7 @@ import kotlin.uuid.Uuid
 @OptIn(ExperimentalUuidApi::class)
 class AugurEvaluatorTest {
     @Test
-    fun `evaluates boolean flag from valid ruleset`() {
+    fun `evaluates boolean flag from rule set snapshot`() {
         val evaluator = AugurEvaluator.of(validRuleSet())
 
         val actual =
@@ -42,7 +42,7 @@ class AugurEvaluatorTest {
     }
 
     @Test
-    fun `evaluates typed default from valid ruleset`() {
+    fun `evaluates typed default from rule set snapshot`() {
         val evaluator = AugurEvaluator.of(validRuleSet())
 
         val actual =

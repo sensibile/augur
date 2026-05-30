@@ -64,6 +64,16 @@ Follow Kent Beck's Tidy First approach.
 - If a tidy changes behavior, it is no longer a tidy; treat it as feature or bug
   work and test it explicitly.
 
+## Review Loop
+
+- After each implementation pass, review the changed code before handing off.
+- Prioritize bugs, boundary regressions, API compatibility, missing tests, and
+  architecture rule violations.
+- Apply necessary fixes found during review in the same task when they are
+  clearly scoped.
+- Re-run the relevant tests and checks after review fixes.
+- Call out any remaining risks that are intentionally left unfixed.
+
 ## Core Module Rules
 
 `augur-rule-core` must stay infrastructure-free.

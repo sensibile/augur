@@ -3,13 +3,13 @@ package me.sensibile.augur.rule.sdk
 import me.sensibile.augur.rule.EvaluationError
 import me.sensibile.augur.rule.Outcome
 import me.sensibile.augur.rule.RuleEngine
+import me.sensibile.augur.rule.RuleSetSnapshot
 import me.sensibile.augur.rule.RuleValue
 import me.sensibile.augur.rule.TypedEvaluationDecision
-import me.sensibile.augur.rule.ValidRuleSet
 import me.sensibile.augur.rule.flatMap
 
 class AugurEvaluator private constructor(
-    private val ruleSet: ValidRuleSet,
+    private val snapshot: RuleSetSnapshot,
 ) {
     fun evaluateBoolean(
         flagKey: String,
@@ -18,7 +18,7 @@ class AugurEvaluator private constructor(
     ): Outcome<AugurEvaluationError, TypedEvaluationDecision<Boolean>> =
         request(flagKey, targetKey, configure)
             .flatMap { request ->
-                RuleEngine.evaluateBoolean(ruleSet, request).mapEvaluationError()
+                RuleEngine.evaluateBoolean(snapshot, request).mapEvaluationError()
             }
 
     fun evaluateString(
@@ -28,7 +28,7 @@ class AugurEvaluator private constructor(
     ): Outcome<AugurEvaluationError, TypedEvaluationDecision<String>> =
         request(flagKey, targetKey, configure)
             .flatMap { request ->
-                RuleEngine.evaluateString(ruleSet, request).mapEvaluationError()
+                RuleEngine.evaluateString(snapshot, request).mapEvaluationError()
             }
 
     fun evaluateNumber(
@@ -38,7 +38,7 @@ class AugurEvaluator private constructor(
     ): Outcome<AugurEvaluationError, TypedEvaluationDecision<Double>> =
         request(flagKey, targetKey, configure)
             .flatMap { request ->
-                RuleEngine.evaluateNumber(ruleSet, request).mapEvaluationError()
+                RuleEngine.evaluateNumber(snapshot, request).mapEvaluationError()
             }
 
     fun evaluateList(
@@ -48,7 +48,7 @@ class AugurEvaluator private constructor(
     ): Outcome<AugurEvaluationError, TypedEvaluationDecision<List<RuleValue>>> =
         request(flagKey, targetKey, configure)
             .flatMap { request ->
-                RuleEngine.evaluateList(ruleSet, request).mapEvaluationError()
+                RuleEngine.evaluateList(snapshot, request).mapEvaluationError()
             }
 
     private fun request(
@@ -63,7 +63,7 @@ class AugurEvaluator private constructor(
         ).mapRequestError()
 
     companion object {
-        fun of(ruleSet: ValidRuleSet): AugurEvaluator = AugurEvaluator(ruleSet)
+        fun of(snapshot: RuleSetSnapshot): AugurEvaluator = AugurEvaluator(snapshot)
     }
 }
 
