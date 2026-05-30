@@ -19,6 +19,11 @@ data class EvaluationDecision(
     val trace: EvaluationTrace = EvaluationTrace.empty(),
 )
 
+data class TypedEvaluationDecision<out A>(
+    val value: A,
+    val decision: EvaluationDecision,
+)
+
 enum class EvaluationReason {
     RuleMatch,
     Default,
@@ -29,6 +34,13 @@ enum class EvaluationReason {
 sealed interface EvaluationError {
     data class InvalidRuleSet(
         val validationError: RuleSetValidationError,
+    ) : EvaluationError
+
+    data class UnexpectedValueType(
+        val flagKey: FlagKey,
+        val expected: RuleValueType,
+        val actual: RuleValueType,
+        val decision: EvaluationDecision,
     ) : EvaluationError
 }
 
@@ -71,7 +83,79 @@ object RuleEngine {
         ruleSet: ValidRuleSet,
         request: EvaluationRequest,
     ): Outcome<EvaluationError, EvaluationDecision> = RuleEvaluator.evaluate(ruleSet, request)
+
+    fun evaluateBoolean(
+        ruleSet: RuleSet,
+        request: EvaluationRequest,
+    ): Outcome<EvaluationError, TypedEvaluationDecision<Boolean>> = evaluate(ruleSet, request).flatMap(::expectBoolean)
+
+    fun evaluateBoolean(
+        ruleSet: ValidRuleSet,
+        request: EvaluationRequest,
+    ): Outcome<EvaluationError, TypedEvaluationDecision<Boolean>> = evaluate(ruleSet, request).flatMap(::expectBoolean)
+
+    fun evaluateString(
+        ruleSet: RuleSet,
+        request: EvaluationRequest,
+    ): Outcome<EvaluationError, TypedEvaluationDecision<String>> = evaluate(ruleSet, request).flatMap(::expectString)
+
+    fun evaluateString(
+        ruleSet: ValidRuleSet,
+        request: EvaluationRequest,
+    ): Outcome<EvaluationError, TypedEvaluationDecision<String>> = evaluate(ruleSet, request).flatMap(::expectString)
+
+    fun evaluateNumber(
+        ruleSet: RuleSet,
+        request: EvaluationRequest,
+    ): Outcome<EvaluationError, TypedEvaluationDecision<Double>> = evaluate(ruleSet, request).flatMap(::expectNumber)
+
+    fun evaluateNumber(
+        ruleSet: ValidRuleSet,
+        request: EvaluationRequest,
+    ): Outcome<EvaluationError, TypedEvaluationDecision<Double>> = evaluate(ruleSet, request).flatMap(::expectNumber)
+
+    fun evaluateList(
+        ruleSet: RuleSet,
+        request: EvaluationRequest,
+    ): Outcome<EvaluationError, TypedEvaluationDecision<List<RuleValue>>> = evaluate(ruleSet, request).flatMap(::expectList)
+
+    fun evaluateList(
+        ruleSet: ValidRuleSet,
+        request: EvaluationRequest,
+    ): Outcome<EvaluationError, TypedEvaluationDecision<List<RuleValue>>> = evaluate(ruleSet, request).flatMap(::expectList)
 }
+
+private fun expectBoolean(decision: EvaluationDecision): Outcome<EvaluationError, TypedEvaluationDecision<Boolean>> =
+    when (val value = decision.value) {
+        is RuleValue.BooleanValue -> Outcome.Ok(TypedEvaluationDecision(value.value, decision))
+        else -> Outcome.Err(decision.typeMismatch(RuleValueType.Boolean))
+    }
+
+private fun expectString(decision: EvaluationDecision): Outcome<EvaluationError, TypedEvaluationDecision<String>> =
+    when (val value = decision.value) {
+        is RuleValue.StringValue -> Outcome.Ok(TypedEvaluationDecision(value.value, decision))
+        else -> Outcome.Err(decision.typeMismatch(RuleValueType.String))
+    }
+
+private fun expectNumber(decision: EvaluationDecision): Outcome<EvaluationError, TypedEvaluationDecision<Double>> =
+    when (val value = decision.value) {
+        is RuleValue.NumberValue -> Outcome.Ok(TypedEvaluationDecision(value.value, decision))
+        else -> Outcome.Err(decision.typeMismatch(RuleValueType.Number))
+    }
+
+private fun expectList(decision: EvaluationDecision): Outcome<EvaluationError, TypedEvaluationDecision<List<RuleValue>>> =
+    when (val value = decision.value) {
+        is RuleValue.ListValue -> Outcome.Ok(TypedEvaluationDecision(value.values, decision))
+        else -> Outcome.Err(decision.typeMismatch(RuleValueType.List))
+    }
+
+private fun EvaluationDecision.typeMismatch(expected: RuleValueType): EvaluationError.UnexpectedValueType =
+    EvaluationError.UnexpectedValueType(
+        flagKey = flagKey,
+        expected = expected,
+        actual = value.type(),
+        decision = this,
+    )
 
 private object RuleEvaluator {
     fun evaluate(

@@ -30,6 +30,17 @@ val decision = decoded.flatMap { ruleSet ->
 }
 ```
 
+기대하는 flag 타입을 알고 있을 때는 typed evaluation API를 사용할 수 있습니다.
+
+```kotlin
+val enabled = decoded.flatMap { ruleSet ->
+    RuleEngine.evaluateBoolean(
+        ruleSet = ruleSet,
+        request = request,
+    )
+}
+```
+
 수정 중인 draft rule을 다룰 때는 `decodeRuleSet`을 사용하고, 평가 가능한 snapshot이 필요할 때는 `decodeValidRuleSet`을 사용합니다.
 
 ## 개발 명령
