@@ -100,7 +100,7 @@ object RuleSetValidator {
                     ruleId = ruleId,
                     attributeKey = predicate.attributeKey,
                     operator = predicate.operator,
-                    expected = expectedType,
+                    expectedTypes = expectedType.types,
                     actual = predicate.value.type(),
                 ),
             )
@@ -173,7 +173,7 @@ sealed interface RuleSetViolation {
         val ruleId: RuleId,
         val attributeKey: AttributeKey,
         val operator: Operator,
-        val expected: RuleValueExpectation,
+        val expectedTypes: Set<RuleValueType>,
         val actual: RuleValueType,
     ) : RuleSetViolation
 }
@@ -191,13 +191,15 @@ enum class RuleValueType {
     Null,
 }
 
-enum class RuleValueExpectation {
-    AnyComparable,
-    ContainsElement,
-    List,
-    Number,
-    String,
-    NoValue,
+internal enum class RuleValueExpectation(
+    val types: Set<RuleValueType>,
+) {
+    AnyComparable(setOf(RuleValueType.String, RuleValueType.Number, RuleValueType.Boolean, RuleValueType.Null)),
+    ContainsElement(setOf(RuleValueType.String, RuleValueType.Number, RuleValueType.Boolean, RuleValueType.Null)),
+    List(setOf(RuleValueType.List)),
+    Number(setOf(RuleValueType.Number)),
+    String(setOf(RuleValueType.String)),
+    NoValue(setOf(RuleValueType.Null)),
 }
 
 fun RuleValue.type(): RuleValueType =
@@ -209,7 +211,7 @@ fun RuleValue.type(): RuleValueType =
         RuleValue.NullValue -> RuleValueType.Null
     }
 
-fun RuleValueExpectation.accepts(value: RuleValue): Boolean =
+internal fun RuleValueExpectation.accepts(value: RuleValue): Boolean =
     when (this) {
         RuleValueExpectation.AnyComparable -> value !is RuleValue.ListValue
         RuleValueExpectation.ContainsElement -> value !is RuleValue.ListValue

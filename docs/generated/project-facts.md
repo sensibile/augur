@@ -38,7 +38,6 @@ Use it as factual source material when updating human-authored documentation.
 ### `augur-rule-sdk`
 
 - `api(project(":augur-rule-core"))`
-- `testImplementation(project(":augur-rule-json"))`
 - `testImplementation(libs.kotlin.test.junit5)`
 
 ## Kotlin Declarations
@@ -89,7 +88,7 @@ Use it as factual source material when updating human-authored documentation.
 - `data class InvalidPredicateValue` (augur-rule-core/src/main/kotlin/me/sensibile/augur/rule/RuleSetValidator.kt)
 - `enum class BranchKind` (augur-rule-core/src/main/kotlin/me/sensibile/augur/rule/RuleSetValidator.kt)
 - `enum class RuleValueType` (augur-rule-core/src/main/kotlin/me/sensibile/augur/rule/RuleSetValidator.kt)
-- `enum class RuleValueExpectation` (augur-rule-core/src/main/kotlin/me/sensibile/augur/rule/RuleSetValidator.kt)
+- `internal enum class RuleValueExpectation` (augur-rule-core/src/main/kotlin/me/sensibile/augur/rule/RuleSetValidator.kt)
 - `sealed interface RuleValue` (augur-rule-core/src/main/kotlin/me/sensibile/augur/rule/RuleValue.kt)
 - `data class StringValue` (augur-rule-core/src/main/kotlin/me/sensibile/augur/rule/RuleValue.kt)
 - `data class NumberValue internal constructor` (augur-rule-core/src/main/kotlin/me/sensibile/augur/rule/RuleValue.kt)
@@ -119,6 +118,10 @@ Use it as factual source material when updating human-authored documentation.
 
 ### `augur-rule-sdk`
 
+- `class AugurEvaluator private constructor` (augur-rule-sdk/src/main/kotlin/me/sensibile/augur/rule/sdk/AugurEvaluator.kt)
+- `sealed interface AugurEvaluationError` (augur-rule-sdk/src/main/kotlin/me/sensibile/augur/rule/sdk/AugurEvaluator.kt)
+- `data class InvalidRequest` (augur-rule-sdk/src/main/kotlin/me/sensibile/augur/rule/sdk/AugurEvaluator.kt)
+- `data class EvaluationFailed` (augur-rule-sdk/src/main/kotlin/me/sensibile/augur/rule/sdk/AugurEvaluator.kt)
 - `sealed interface EvaluationRequestBuildError` (augur-rule-sdk/src/main/kotlin/me/sensibile/augur/rule/sdk/EvaluationRequestBuilder.kt)
 - `data class InvalidValueObject` (augur-rule-sdk/src/main/kotlin/me/sensibile/augur/rule/sdk/EvaluationRequestBuilder.kt)
 - `value class EvaluationAttributes internal constructor` (augur-rule-sdk/src/main/kotlin/me/sensibile/augur/rule/sdk/EvaluationRequestBuilder.kt)

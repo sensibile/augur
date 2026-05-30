@@ -51,7 +51,7 @@ class RuleEngineTest {
                                 ruleId = ruleId,
                                 attributeKey = attributeKey("age"),
                                 operator = Operator.GreaterThanOrEqual,
-                                expected = RuleValueExpectation.Number,
+                                expectedTypes = setOf(RuleValueType.Number),
                                 actual = RuleValueType.String,
                             ),
                         ),

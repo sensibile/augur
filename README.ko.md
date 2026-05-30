@@ -29,29 +29,19 @@ val ruleSet =
         is Outcome.Ok -> result.value
     }
 
-val request =
-    when (
-        val result =
-            evaluationRequest(
-                flagKey = "new_checkout",
-                targetKey = "user-1",
-            ) {
-                string("country", "KR")
-                number("age", 19.0)
-            }
-    ) {
-        is Outcome.Err -> error("Invalid request: ${result.error}")
-        is Outcome.Ok -> result.value
-    }
+val evaluator = AugurEvaluator.of(ruleSet)
 
 val enabled =
-    RuleEngine.evaluateBoolean(
-        ruleSet = ruleSet,
-        request = request,
-    )
+    evaluator.evaluateBoolean(
+        flagKey = "new_checkout",
+        targetKey = "user-1",
+    ) {
+        string("country", "KR")
+        number("age", 19.0)
+    }
 ```
 
-일반 `RuleValue` decision이 필요할 때는 `RuleEngine.evaluate`를 사용합니다.
+일반 `RuleValue` decision이 필요할 때는 `RuleEngine.evaluate`를 직접 사용합니다.
 수정 중인 draft rule을 다룰 때는 `decodeRuleSet`을 사용하고, 평가 가능한 snapshot이 필요할 때는 `decodeValidRuleSet`을 사용합니다.
 
 ## 개발 명령

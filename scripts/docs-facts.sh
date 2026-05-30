@@ -107,7 +107,8 @@ source_declarations() {
     sort |
     while IFS= read -r file; do
       awk -v file="$file" '
-        /^[[:space:]]*(sealed[[:space:]]+)?(data[[:space:]]+)?(object|class|interface|enum[[:space:]]+class|value[[:space:]]+class)[[:space:]]+[A-Za-z0-9_]+/ {
+        /^[[:space:]]*private[[:space:]]+/ { next }
+        /^[[:space:]]*(internal[[:space:]]+)?(sealed[[:space:]]+)?(data[[:space:]]+)?(object|class|interface|enum[[:space:]]+class|value[[:space:]]+class)[[:space:]]+[A-Za-z0-9_]+/ {
           line = $0
           sub(/^[[:space:]]+/, "", line)
           sub(/[({:].*$/, "", line)
