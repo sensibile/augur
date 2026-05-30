@@ -20,12 +20,15 @@ The canonical rule storage format is documented in
 [docs/rule-json-format.md](docs/rule-json-format.md).
 Admin/API and snapshot boundaries are documented in
 [docs/adr/0002-admin-api-and-snapshot-boundaries.md](docs/adr/0002-admin-api-and-snapshot-boundaries.md).
+The initial Admin API contract is documented in
+[docs/admin-api.md](docs/admin-api.md).
 
 ## Modules
 
 - `augur-rule-core`: pure rule domain, validation, and evaluation
 - `augur-rule-json`: JSON storage format adapter
 - `augur-rule-sdk`: Kotlin-friendly request builders and SDK conveniences
+- `augur-rule-api`: Spring API shell for rule authoring and validation
 
 ## End-To-End Usage
 

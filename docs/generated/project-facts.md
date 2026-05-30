@@ -22,6 +22,7 @@ Use it as factual source material when updating human-authored documentation.
 - `augur-rule-core` (functional core)
 - `augur-rule-json` (serialization adapter)
 - `augur-rule-sdk` (sdk shell)
+- `augur-rule-api` (service shell)
 
 ## Module Dependencies
 
@@ -38,6 +39,15 @@ Use it as factual source material when updating human-authored documentation.
 ### `augur-rule-sdk`
 
 - `api(project(":augur-rule-core"))`
+- `testImplementation(libs.kotlin.test.junit5)`
+
+### `augur-rule-api`
+
+- `implementation(project(":augur-rule-core"))`
+- `implementation(project(":augur-rule-json"))`
+- `implementation(platform(libs.spring.boot.dependencies))`
+- `implementation(libs.kotlin.reflect)`
+- `implementation(libs.spring.boot.starter.webmvc)`
 - `testImplementation(libs.kotlin.test.junit5)`
 
 ## Kotlin Declarations
@@ -126,4 +136,17 @@ Use it as factual source material when updating human-authored documentation.
 - `data class InvalidValueObject` (augur-rule-sdk/src/main/kotlin/me/sensibile/augur/rule/sdk/EvaluationRequestBuilder.kt)
 - `value class EvaluationAttributes internal constructor` (augur-rule-sdk/src/main/kotlin/me/sensibile/augur/rule/sdk/EvaluationRequestBuilder.kt)
 - `class EvaluationAttributesBuilder internal constructor` (augur-rule-sdk/src/main/kotlin/me/sensibile/augur/rule/sdk/EvaluationRequestBuilder.kt)
+
+### `augur-rule-api`
+
+- `class AugurRuleApiApplication` (augur-rule-api/src/main/kotlin/me/sensibile/augur/rule/api/AugurRuleApiApplication.kt)
+- `class RuleSetValidationController` (augur-rule-api/src/main/kotlin/me/sensibile/augur/rule/api/RuleSetValidationController.kt)
+- `data class RuleSetValidationResponse` (augur-rule-api/src/main/kotlin/me/sensibile/augur/rule/api/RuleSetValidationController.kt)
+- `class RuleSetValidationService` (augur-rule-api/src/main/kotlin/me/sensibile/augur/rule/api/RuleSetValidationService.kt)
+- `interface RuleSetValidatorPort` (augur-rule-api/src/main/kotlin/me/sensibile/augur/rule/api/RuleSetValidationService.kt)
+- `sealed interface RuleSetValidationResult` (augur-rule-api/src/main/kotlin/me/sensibile/augur/rule/api/RuleSetValidationService.kt)
+- `data class Valid` (augur-rule-api/src/main/kotlin/me/sensibile/augur/rule/api/RuleSetValidationService.kt)
+- `data class Invalid` (augur-rule-api/src/main/kotlin/me/sensibile/augur/rule/api/RuleSetValidationService.kt)
+- `data class RuleSetSnapshotSummary` (augur-rule-api/src/main/kotlin/me/sensibile/augur/rule/api/RuleSetValidationService.kt)
+- `data class RuleSetValidationErrorResponse` (augur-rule-api/src/main/kotlin/me/sensibile/augur/rule/api/RuleSetValidationService.kt)
 

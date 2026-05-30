@@ -102,6 +102,9 @@ SDK fetch/cache behavior belongs outside the core.
 - `augur-rule-sdk` is a rule evaluation consumer facade. Its production code may
   depend on `augur-rule-core`, but not on `augur-rule-json`, HTTP, storage, or
   admin/API modules.
+- `augur-rule-api` is a Spring shell for rule authoring and validation. Its
+  production code may depend on `augur-rule-core` and `augur-rule-json`, but not
+  on `augur-rule-sdk`.
 - Rule creation, editing, persistence, approval, and audit workflows belong in
   admin/API modules, not in the SDK.
 
