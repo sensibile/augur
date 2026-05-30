@@ -21,6 +21,7 @@ Use it as factual source material when updating human-authored documentation.
 
 - `augur-rule-core` (functional core)
 - `augur-rule-json` (serialization adapter)
+- `augur-rule-sdk` (sdk shell)
 
 ## Module Dependencies
 
@@ -32,6 +33,11 @@ Use it as factual source material when updating human-authored documentation.
 
 - `api(project(":augur-rule-core"))`
 - `implementation(libs.kotlinx.serialization.json)`
+- `testImplementation(libs.kotlin.test.junit5)`
+
+### `augur-rule-sdk`
+
+- `api(project(":augur-rule-core"))`
 - `testImplementation(libs.kotlin.test.junit5)`
 
 ## Kotlin Declarations
@@ -109,4 +115,11 @@ Use it as factual source material when updating human-authored documentation.
 - `data class Any` (augur-rule-json/src/main/kotlin/me/sensibile/augur/rule/json/RuleJson.kt)
 - `data class Not` (augur-rule-json/src/main/kotlin/me/sensibile/augur/rule/json/RuleJson.kt)
 - `data class Predicate` (augur-rule-json/src/main/kotlin/me/sensibile/augur/rule/json/RuleJson.kt)
+
+### `augur-rule-sdk`
+
+- `sealed interface EvaluationRequestBuildError` (augur-rule-sdk/src/main/kotlin/me/sensibile/augur/rule/sdk/EvaluationRequestBuilder.kt)
+- `data class InvalidValueObject` (augur-rule-sdk/src/main/kotlin/me/sensibile/augur/rule/sdk/EvaluationRequestBuilder.kt)
+- `value class EvaluationAttributes internal constructor` (augur-rule-sdk/src/main/kotlin/me/sensibile/augur/rule/sdk/EvaluationRequestBuilder.kt)
+- `class EvaluationAttributesBuilder internal constructor` (augur-rule-sdk/src/main/kotlin/me/sensibile/augur/rule/sdk/EvaluationRequestBuilder.kt)
 

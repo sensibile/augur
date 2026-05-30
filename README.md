@@ -16,28 +16,51 @@ Generated project facts live at `docs/generated/project-facts.md`.
 
 Korean documentation is available in [README.ko.md](README.ko.md).
 
+## Modules
+
+- `augur-rule-core`: pure rule domain, validation, and evaluation
+- `augur-rule-json`: JSON storage format adapter
+- `augur-rule-sdk`: Kotlin-friendly request builders and SDK conveniences
+
 ## Minimal Usage
 
 ```kotlin
-val decoded = RuleJson.decodeValidRuleSet(json)
+val ruleSet =
+    when (val result = RuleJson.decodeValidRuleSet(json)) {
+        is Outcome.Err -> error("Invalid rule set: ${result.error}")
+        is Outcome.Ok -> result.value
+    }
 
-val decision = decoded.flatMap { ruleSet ->
+val request =
+    when (
+        val result =
+            evaluationRequest(
+                flagKey = "new_checkout",
+                targetKey = "user-1",
+            ) {
+                string("country", "KR")
+                number("age", 19.0)
+            }
+    ) {
+        is Outcome.Err -> error("Invalid request: ${result.error}")
+        is Outcome.Ok -> result.value
+    }
+
+val decision =
     RuleEngine.evaluate(
         ruleSet = ruleSet,
         request = request,
     )
-}
 ```
 
 Typed evaluation APIs are available when the expected flag type is known:
 
 ```kotlin
-val enabled = decoded.flatMap { ruleSet ->
+val enabled =
     RuleEngine.evaluateBoolean(
         ruleSet = ruleSet,
         request = request,
     )
-}
 ```
 
 Use `decodeRuleSet` when working with draft or editable rules. Use
