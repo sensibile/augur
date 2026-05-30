@@ -40,7 +40,10 @@ Invalid draft JSON returns `422 Unprocessable Entity`.
     "code": "invalid_rule_set",
     "message": "Rule set validation failed.",
     "violations": [
-      "Rule 018ff7c1-9354-7b02-b021-76d2791d6a21 for flag new_checkout serves String but default value is Boolean."
+      {
+        "code": "serve_type_mismatch",
+        "message": "Rule 018ff7c1-9354-7b02-b021-76d2791d6a21 for flag new_checkout serves String but default value is Boolean."
+      }
     ]
   }
 }

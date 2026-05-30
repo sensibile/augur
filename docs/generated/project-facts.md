@@ -152,4 +152,5 @@ Use it as factual source material when updating human-authored documentation.
 - `data class Invalid` (augur-rule-api/src/main/kotlin/me/sensibile/augur/rule/api/RuleSetValidationService.kt)
 - `data class RuleSetSnapshotSummary` (augur-rule-api/src/main/kotlin/me/sensibile/augur/rule/api/RuleSetValidationService.kt)
 - `data class RuleSetValidationErrorResponse` (augur-rule-api/src/main/kotlin/me/sensibile/augur/rule/api/RuleSetValidationService.kt)
+- `data class RuleSetViolationResponse` (augur-rule-api/src/main/kotlin/me/sensibile/augur/rule/api/RuleSetValidationService.kt)
 

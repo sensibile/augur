@@ -22,6 +22,14 @@ class RuleSetValidationServiceTest {
         val invalid = assertIs<RuleSetValidationResult.Invalid>(result)
         assertEquals("invalid_rule_set", invalid.error.code)
         assertEquals(1, invalid.error.violations.size)
+        assertEquals(
+            "serve_type_mismatch",
+            invalid
+                .error
+                .violations
+                .single()
+                .code,
+        )
     }
 
     @Test

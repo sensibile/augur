@@ -42,7 +42,8 @@ class RuleSetValidationHttpTest {
                 jsonPath("$.valid") { value(false) }
                 jsonPath("$.summary") { doesNotExist() }
                 jsonPath("$.error.code") { value("invalid_rule_set") }
-                jsonPath("$.error.violations[0]") {
+                jsonPath("$.error.violations[0].code") { value("serve_type_mismatch") }
+                jsonPath("$.error.violations[0].message") {
                     value(
                         "Rule 018ff7c1-9354-7b02-b021-76d2791d6a21 for flag new_checkout serves String but default value is Boolean.",
                     )

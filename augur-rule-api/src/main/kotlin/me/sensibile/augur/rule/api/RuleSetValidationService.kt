@@ -38,7 +38,12 @@ data class RuleSetSnapshotSummary(
 data class RuleSetValidationErrorResponse(
     val code: String,
     val message: String,
-    val violations: List<String> = emptyList(),
+    val violations: List<RuleSetViolationResponse> = emptyList(),
+)
+
+data class RuleSetViolationResponse(
+    val code: String,
+    val message: String,
 )
 
 private fun RuleSetSnapshot.toSummary(): RuleSetSnapshotSummary =
@@ -74,7 +79,7 @@ private fun RuleJsonError.toValidationError(): RuleSetValidationErrorResponse =
             RuleSetValidationErrorResponse(
                 code = "invalid_rule_set",
                 message = "Rule set validation failed.",
-                violations = error.violations.map(RuleSetViolation::toViolationMessage),
+                violations = error.violations.map(RuleSetViolation::toViolationResponse),
             )
         }
 
@@ -86,25 +91,42 @@ private fun RuleJsonError.toValidationError(): RuleSetValidationErrorResponse =
         }
     }
 
-private fun RuleSetViolation.toViolationMessage(): String =
+private fun RuleSetViolation.toViolationResponse(): RuleSetViolationResponse =
     when (this) {
         is RuleSetViolation.FlagKeyMismatch -> {
-            "Flag map key ${mapKey.value} does not match flag key ${flagKey.value}."
+            RuleSetViolationResponse(
+                code = "flag_key_mismatch",
+                message = "Flag map key ${mapKey.value} does not match flag key ${flagKey.value}.",
+            )
         }
 
         is RuleSetViolation.DuplicateRuleId -> {
-            "Rule id $ruleId is duplicated across flags ${flagKeys.joinToString { it.value }}."
+            RuleSetViolationResponse(
+                code = "duplicate_rule_id",
+                message = "Rule id $ruleId is duplicated across flags ${flagKeys.joinToString { it.value }}.",
+            )
         }
 
         is RuleSetViolation.ServeTypeMismatch -> {
-            "Rule $ruleId for flag ${flagKey.value} serves $actual but default value is $expected."
+            RuleSetViolationResponse(
+                code = "serve_type_mismatch",
+                message = "Rule $ruleId for flag ${flagKey.value} serves $actual but default value is $expected.",
+            )
         }
 
         is RuleSetViolation.EmptyConditionBranch -> {
-            "Rule $ruleId for flag ${flagKey.value} has an empty $branchKind condition branch."
+            RuleSetViolationResponse(
+                code = "empty_condition_branch",
+                message = "Rule $ruleId for flag ${flagKey.value} has an empty $branchKind condition branch.",
+            )
         }
 
         is RuleSetViolation.InvalidPredicateValue -> {
-            "Rule $ruleId for flag ${flagKey.value} uses $operator with $actual for ${attributeKey.value}; expected $expectedTypes."
+            RuleSetViolationResponse(
+                code = "invalid_predicate_value",
+                message =
+                    "Rule $ruleId for flag ${flagKey.value} uses $operator with $actual for ${attributeKey.value}; " +
+                        "expected $expectedTypes.",
+            )
         }
     }
