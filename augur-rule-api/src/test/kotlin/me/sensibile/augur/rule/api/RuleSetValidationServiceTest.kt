@@ -33,7 +33,7 @@ class RuleSetValidationServiceTest {
     }
 }
 
-private fun validRuleSetJson(): String =
+internal fun validRuleSetJson(): String =
     """
     {
       "version": 1,
@@ -59,7 +59,7 @@ private fun validRuleSetJson(): String =
     }
     """.trimIndent()
 
-private fun invalidServeTypeRuleSetJson(): String =
+internal fun invalidServeTypeRuleSetJson(): String =
     """
     {
       "version": 1,

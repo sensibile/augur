@@ -49,6 +49,9 @@ Use it as factual source material when updating human-authored documentation.
 - `implementation(libs.kotlin.reflect)`
 - `implementation(libs.spring.boot.starter.webmvc)`
 - `testImplementation(libs.kotlin.test.junit5)`
+- `testImplementation(libs.spring.boot.starter.webmvc.test)`
+- `testImplementation(libs.spring.boot.test)`
+- `testImplementation(libs.spring.boot.test.autoconfigure)`
 
 ## Kotlin Declarations
 
