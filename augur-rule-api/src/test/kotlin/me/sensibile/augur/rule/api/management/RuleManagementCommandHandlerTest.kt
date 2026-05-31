@@ -505,13 +505,65 @@ class RuleManagementCommandHandlerTest {
     }
 
     @Test
-    fun `rejects unsupported commands explicitly`() {
-        val state = draftState()
+    fun `publishes validated draft`() {
+        val state = draftState(status = RuleSetDraftStatus.Validated)
+        val eventId = eventId()
+        val publishedRuleSetId = publishedRuleSetId()
+        val command = PublishRuleSet(draftId = state.draftId, publishedRuleSetId = publishedRuleSetId)
+
+        val actual = RuleManagementCommandHandler.handle(state = state, command = command, eventId = eventId)
+
+        assertEquals(
+            Outcome.Ok(
+                RuleSetPublished(
+                    eventId = eventId,
+                    draftId = state.draftId,
+                    publishedRuleSetId = publishedRuleSetId,
+                    ruleSetVersion = state.ruleSetVersion,
+                ),
+            ),
+            actual,
+        )
+    }
+
+    @Test
+    fun `rejects publish when draft is not validated`() {
+        val state = draftState(status = RuleSetDraftStatus.Draft)
+        val command = PublishRuleSet(draftId = state.draftId, publishedRuleSetId = publishedRuleSetId())
+
+        val actual = RuleManagementCommandHandler.handle(state = state, command = command, eventId = eventId())
+
+        assertEquals(
+            Outcome.Err(RuleManagementCommandError.DraftIsNotPublishable(state.draftId, RuleSetDraftStatus.Draft)),
+            actual,
+        )
+    }
+
+    @Test
+    fun `archives published draft`() {
+        val state = draftState(status = RuleSetDraftStatus.Published)
+        val eventId = eventId()
+        val command = ArchiveRuleSet(draftId = state.draftId)
+
+        val actual = RuleManagementCommandHandler.handle(state = state, command = command, eventId = eventId)
+
+        assertEquals(
+            Outcome.Ok(RuleSetArchived(eventId = eventId, draftId = state.draftId)),
+            actual,
+        )
+    }
+
+    @Test
+    fun `rejects archive when draft is not published`() {
+        val state = draftState(status = RuleSetDraftStatus.Validated)
         val command = ArchiveRuleSet(draftId = state.draftId)
 
         val actual = RuleManagementCommandHandler.handle(state = state, command = command, eventId = eventId())
 
-        assertEquals(Outcome.Err(RuleManagementCommandError.UnsupportedCommand("ArchiveRuleSet")), actual)
+        assertEquals(
+            Outcome.Err(RuleManagementCommandError.DraftIsNotArchivable(state.draftId, RuleSetDraftStatus.Validated)),
+            actual,
+        )
     }
 
     private fun draftState(
@@ -566,6 +618,12 @@ class RuleManagementCommandHandlerTest {
         when (val eventId = RuleManagementEventId.of(Uuid.parse(value))) {
             is Outcome.Err -> error("Invalid test event id: ${eventId.error}")
             is Outcome.Ok -> eventId.value
+        }
+
+    private fun publishedRuleSetId(value: String = "018ff7c1-9354-7b02-b021-76d2791d6a25"): PublishedRuleSetId =
+        when (val publishedRuleSetId = PublishedRuleSetId.of(Uuid.parse(value))) {
+            is Outcome.Err -> error("Invalid test published rule set id: ${publishedRuleSetId.error}")
+            is Outcome.Ok -> publishedRuleSetId.value
         }
 
     private fun version(value: Long): RuleSetVersion =

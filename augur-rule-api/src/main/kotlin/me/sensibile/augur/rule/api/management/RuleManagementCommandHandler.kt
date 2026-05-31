@@ -52,10 +52,12 @@ object RuleManagementCommandHandler {
                 removeRule(state, command, eventId)
             }
 
-            is PublishRuleSet,
-            is ArchiveRuleSet,
-            -> {
-                Outcome.Err(RuleManagementCommandError.UnsupportedCommand(command::class.simpleName.orEmpty()))
+            is PublishRuleSet -> {
+                publishRuleSet(state, command, eventId)
+            }
+
+            is ArchiveRuleSet -> {
+                archiveRuleSet(state, command, eventId)
             }
         }
 
@@ -284,6 +286,56 @@ object RuleManagementCommandHandler {
             }
 }
 
+private fun publishRuleSet(
+    state: RuleSetDraftState?,
+    command: PublishRuleSet,
+    eventId: RuleManagementEventId,
+): Outcome<RuleManagementCommandError, RuleSetPublished> =
+    state
+        .requireDraft(command.draftId)
+        .flatMap { draft ->
+            when {
+                draft.status != RuleSetDraftStatus.Validated -> {
+                    Outcome.Err(RuleManagementCommandError.DraftIsNotPublishable(command.draftId, draft.status))
+                }
+
+                else -> {
+                    Outcome.Ok(
+                        RuleSetPublished(
+                            eventId = eventId,
+                            draftId = command.draftId,
+                            publishedRuleSetId = command.publishedRuleSetId,
+                            ruleSetVersion = draft.ruleSetVersion,
+                        ),
+                    )
+                }
+            }
+        }
+
+private fun archiveRuleSet(
+    state: RuleSetDraftState?,
+    command: ArchiveRuleSet,
+    eventId: RuleManagementEventId,
+): Outcome<RuleManagementCommandError, RuleSetArchived> =
+    state
+        .requireDraft(command.draftId)
+        .flatMap { draft ->
+            when {
+                draft.status != RuleSetDraftStatus.Published -> {
+                    Outcome.Err(RuleManagementCommandError.DraftIsNotArchivable(command.draftId, draft.status))
+                }
+
+                else -> {
+                    Outcome.Ok(
+                        RuleSetArchived(
+                            eventId = eventId,
+                            draftId = command.draftId,
+                        ),
+                    )
+                }
+            }
+        }
+
 sealed interface RuleManagementCommandError {
     data class DraftAlreadyExists(
         val draftId: RuleSetDraftId,
@@ -299,6 +351,16 @@ sealed interface RuleManagementCommandError {
     ) : RuleManagementCommandError
 
     data class DraftIsNotEditable(
+        val draftId: RuleSetDraftId,
+        val status: RuleSetDraftStatus,
+    ) : RuleManagementCommandError
+
+    data class DraftIsNotPublishable(
+        val draftId: RuleSetDraftId,
+        val status: RuleSetDraftStatus,
+    ) : RuleManagementCommandError
+
+    data class DraftIsNotArchivable(
         val draftId: RuleSetDraftId,
         val status: RuleSetDraftStatus,
     ) : RuleManagementCommandError
@@ -336,10 +398,6 @@ sealed interface RuleManagementCommandError {
     data class InvalidRuleSetDraft(
         val draftId: RuleSetDraftId,
         val error: RuleSetValidationError,
-    ) : RuleManagementCommandError
-
-    data class UnsupportedCommand(
-        val commandName: String,
     ) : RuleManagementCommandError
 }
 

@@ -193,6 +193,46 @@ class RuleManagementEventApplierTest {
     }
 
     @Test
+    fun `applies rule set published event`() {
+        val state = draftState(status = RuleSetDraftStatus.Validated)
+        val event =
+            RuleSetPublished(
+                eventId = eventId(),
+                draftId = state.draftId,
+                publishedRuleSetId = publishedRuleSetId(),
+                ruleSetVersion = state.ruleSetVersion,
+            )
+
+        val actual = RuleManagementEventApplier.apply(state = state, event = event)
+
+        assertEquals(
+            RuleSetDraftStatus.Published,
+            (actual as Outcome.Ok)
+                .value
+                .status,
+        )
+    }
+
+    @Test
+    fun `applies rule set archived event`() {
+        val state = draftState(status = RuleSetDraftStatus.Published)
+        val event =
+            RuleSetArchived(
+                eventId = eventId(),
+                draftId = state.draftId,
+            )
+
+        val actual = RuleManagementEventApplier.apply(state = state, event = event)
+
+        assertEquals(
+            RuleSetDraftStatus.Archived,
+            (actual as Outcome.Ok)
+                .value
+                .status,
+        )
+    }
+
+    @Test
     fun `rejects event without draft state`() {
         val event =
             FlagAdded(
@@ -206,12 +246,15 @@ class RuleManagementEventApplierTest {
         assertEquals(Outcome.Err(RuleManagementEventApplyError.DraftNotFound(event.draftId)), actual)
     }
 
-    private fun draftState(flags: Map<FlagKey, Flag> = emptyMap()): RuleSetDraftState =
+    private fun draftState(
+        flags: Map<FlagKey, Flag> = emptyMap(),
+        status: RuleSetDraftStatus = RuleSetDraftStatus.Draft,
+    ): RuleSetDraftState =
         RuleSetDraftState(
             draftId = draftId(),
             ruleSetVersion = version(1),
             flags = flags,
-            status = RuleSetDraftStatus.Draft,
+            status = status,
         )
 
     private fun flag(
@@ -248,6 +291,12 @@ class RuleManagementEventApplierTest {
         when (val eventId = RuleManagementEventId.of(Uuid.parse("018ff7c1-9354-7b02-b021-76d2791d6a22"))) {
             is Outcome.Err -> error("Invalid test event id: ${eventId.error}")
             is Outcome.Ok -> eventId.value
+        }
+
+    private fun publishedRuleSetId(): PublishedRuleSetId =
+        when (val publishedRuleSetId = PublishedRuleSetId.of(Uuid.parse("018ff7c1-9354-7b02-b021-76d2791d6a25"))) {
+            is Outcome.Err -> error("Invalid test published rule set id: ${publishedRuleSetId.error}")
+            is Outcome.Ok -> publishedRuleSetId.value
         }
 
     private fun version(value: Long): RuleSetVersion =
