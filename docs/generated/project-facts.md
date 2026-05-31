@@ -199,6 +199,7 @@ Use it as factual source material when updating human-authored documentation.
 - `data class DraftIdMismatch` (augur-rule-api/src/main/kotlin/me/sensibile/augur/rule/api/management/RuleManagementEventApplier.kt)
 - `data class FlagNotFound` (augur-rule-api/src/main/kotlin/me/sensibile/augur/rule/api/management/RuleManagementEventApplier.kt)
 - `data class RuleNotFound` (augur-rule-api/src/main/kotlin/me/sensibile/augur/rule/api/management/RuleManagementEventApplier.kt)
+- `object RuleManagementEventReplayer` (augur-rule-api/src/main/kotlin/me/sensibile/augur/rule/api/management/RuleManagementEventReplayer.kt)
 - `internal object RuleManagementFlagEventApplier` (augur-rule-api/src/main/kotlin/me/sensibile/augur/rule/api/management/RuleManagementFlagEventApplier.kt)
 - `value class RuleSetDraftId private constructor` (augur-rule-api/src/main/kotlin/me/sensibile/augur/rule/api/management/RuleManagementIdentifier.kt)
 - `value class PublishedRuleSetId private constructor` (augur-rule-api/src/main/kotlin/me/sensibile/augur/rule/api/management/RuleManagementIdentifier.kt)
