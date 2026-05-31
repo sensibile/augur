@@ -1,21 +1,11 @@
 package me.sensibile.augur.rule.api.management
 
-import me.sensibile.augur.rule.AttributeKey
-import me.sensibile.augur.rule.Condition
-import me.sensibile.augur.rule.Flag
-import me.sensibile.augur.rule.FlagKey
 import me.sensibile.augur.rule.Operator
 import me.sensibile.augur.rule.Outcome
-import me.sensibile.augur.rule.Rule
-import me.sensibile.augur.rule.RuleId
-import me.sensibile.augur.rule.RuleSetVersion
 import me.sensibile.augur.rule.RuleValue
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.uuid.ExperimentalUuidApi
-import kotlin.uuid.Uuid
 
-@OptIn(ExperimentalUuidApi::class)
 class RuleManagementEventApplierTest {
     @Test
     fun `applies draft created event`() {
@@ -90,7 +80,7 @@ class RuleManagementEventApplierTest {
 
     @Test
     fun `applies rule changed events`() {
-        val rule = rule()
+        val rule = rule(serve = RuleValue.boolean(false))
         val flag = flag("new_checkout", rules = listOf(rule))
         val state = draftState(flags = mapOf(flag.key to flag))
         val serve = RuleValue.boolean(true)
@@ -122,12 +112,7 @@ class RuleManagementEventApplierTest {
         val rule = rule()
         val flag = flag("new_checkout", rules = listOf(rule))
         val state = draftState(flags = mapOf(flag.key to flag))
-        val condition =
-            Condition.Predicate(
-                attributeKey = attributeKey("tier"),
-                operator = Operator.Eq,
-                value = RuleValue.string("pro"),
-            )
+        val condition = condition("tier", Operator.Eq, RuleValue.string("pro"))
         val event =
             RuleConditionChanged(
                 eventId = eventId(),
@@ -245,81 +230,4 @@ class RuleManagementEventApplierTest {
 
         assertEquals(Outcome.Err(RuleManagementEventApplyError.DraftNotFound(event.draftId)), actual)
     }
-
-    private fun draftState(
-        flags: Map<FlagKey, Flag> = emptyMap(),
-        status: RuleSetDraftStatus = RuleSetDraftStatus.Draft,
-    ): RuleSetDraftState =
-        RuleSetDraftState(
-            draftId = draftId(),
-            ruleSetVersion = version(1),
-            flags = flags,
-            status = status,
-        )
-
-    private fun flag(
-        key: String,
-        enabled: Boolean = true,
-        rules: List<Rule> = emptyList(),
-    ): Flag =
-        Flag(
-            key = flagKey(key),
-            enabled = enabled,
-            defaultValue = RuleValue.boolean(false),
-            rules = rules,
-        )
-
-    private fun rule(id: String = "018ff7c1-9354-7b02-b021-76d2791d6a23"): Rule =
-        Rule(
-            id = ruleId(id),
-            condition =
-                Condition.Predicate(
-                    attributeKey = attributeKey("country"),
-                    operator = Operator.Eq,
-                    value = RuleValue.string("KR"),
-                ),
-            serve = RuleValue.boolean(false),
-        )
-
-    private fun draftId(): RuleSetDraftId =
-        when (val draftId = RuleSetDraftId.of(Uuid.parse("018ff7c1-9354-7b02-b021-76d2791d6a21"))) {
-            is Outcome.Err -> error("Invalid test draft id: ${draftId.error}")
-            is Outcome.Ok -> draftId.value
-        }
-
-    private fun eventId(): RuleManagementEventId =
-        when (val eventId = RuleManagementEventId.of(Uuid.parse("018ff7c1-9354-7b02-b021-76d2791d6a22"))) {
-            is Outcome.Err -> error("Invalid test event id: ${eventId.error}")
-            is Outcome.Ok -> eventId.value
-        }
-
-    private fun publishedRuleSetId(): PublishedRuleSetId =
-        when (val publishedRuleSetId = PublishedRuleSetId.of(Uuid.parse("018ff7c1-9354-7b02-b021-76d2791d6a25"))) {
-            is Outcome.Err -> error("Invalid test published rule set id: ${publishedRuleSetId.error}")
-            is Outcome.Ok -> publishedRuleSetId.value
-        }
-
-    private fun version(value: Long): RuleSetVersion =
-        when (val version = RuleSetVersion.of(value)) {
-            is Outcome.Err -> error("Invalid test version: ${version.error}")
-            is Outcome.Ok -> version.value
-        }
-
-    private fun flagKey(value: String): FlagKey =
-        when (val key = FlagKey.of(value)) {
-            is Outcome.Err -> error("Invalid test flag key: ${key.error}")
-            is Outcome.Ok -> key.value
-        }
-
-    private fun attributeKey(value: String): AttributeKey =
-        when (val key = AttributeKey.of(value)) {
-            is Outcome.Err -> error("Invalid test attribute key: ${key.error}")
-            is Outcome.Ok -> key.value
-        }
-
-    private fun ruleId(value: String = "018ff7c1-9354-7b02-b021-76d2791d6a23"): RuleId =
-        when (val ruleId = RuleId.of(Uuid.parse(value))) {
-            is Outcome.Err -> error("Invalid test rule id: ${ruleId.error}")
-            is Outcome.Ok -> ruleId.value
-        }
 }
