@@ -1,28 +1,14 @@
 package me.sensibile.augur.rule.sdk
 
-import me.sensibile.augur.rule.AttributeKey
-import me.sensibile.augur.rule.Condition
 import me.sensibile.augur.rule.EvaluationReason
-import me.sensibile.augur.rule.Flag
-import me.sensibile.augur.rule.FlagKey
-import me.sensibile.augur.rule.Operator
 import me.sensibile.augur.rule.Outcome
-import me.sensibile.augur.rule.Rule
 import me.sensibile.augur.rule.RuleEngine
-import me.sensibile.augur.rule.RuleId
-import me.sensibile.augur.rule.RuleSet
-import me.sensibile.augur.rule.RuleSetValidator
-import me.sensibile.augur.rule.RuleSetVersion
 import me.sensibile.augur.rule.RuleValue
-import me.sensibile.augur.rule.TargetKey
 import me.sensibile.augur.rule.ValueObjectError
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
-import kotlin.uuid.ExperimentalUuidApi
-import kotlin.uuid.Uuid
 
-@OptIn(ExperimentalUuidApi::class)
 class EvaluationRequestBuilderTest {
     @Test
     fun `builds evaluation request from primitive attributes`() {
@@ -119,34 +105,7 @@ class EvaluationRequestBuilderTest {
 
     @Test
     fun `built request can be used with typed rule evaluation`() {
-        val ruleSet =
-            valid(
-                RuleSet(
-                    version = version(1),
-                    flags =
-                        mapOf(
-                            flagKey("new_checkout") to
-                                Flag(
-                                    key = flagKey("new_checkout"),
-                                    enabled = true,
-                                    defaultValue = RuleValue.boolean(false),
-                                    rules =
-                                        listOf(
-                                            Rule(
-                                                id = ruleId("01890f2e-7cc3-7cc3-8c4f-123456789abc"),
-                                                condition =
-                                                    Condition.Predicate(
-                                                        attributeKey = attributeKey("country"),
-                                                        operator = Operator.Eq,
-                                                        value = RuleValue.string("KR"),
-                                                    ),
-                                                serve = RuleValue.boolean(true),
-                                            ),
-                                        ),
-                                ),
-                        ),
-                ),
-            )
+        val ruleSet = validCheckoutRuleSet()
         val request =
             when (
                 val result =
@@ -155,6 +114,7 @@ class EvaluationRequestBuilderTest {
                         targetKey = "user-1",
                     ) {
                         string("country", "KR")
+                        string("plan", "pro")
                     }
             ) {
                 is Outcome.Err -> error("Invalid test request: ${result.error}")
@@ -170,46 +130,4 @@ class EvaluationRequestBuilderTest {
         assertEquals(true, (actual as Outcome.Ok).value.value)
         assertEquals(EvaluationReason.RuleMatch, actual.value.decision.reason)
     }
-
-    private fun flagKey(value: String): FlagKey =
-        when (val result = FlagKey.of(value)) {
-            is Outcome.Err -> error("Invalid test flag key: $value")
-            is Outcome.Ok -> result.value
-        }
-
-    private fun targetKey(value: String): TargetKey =
-        when (val result = TargetKey.of(value)) {
-            is Outcome.Err -> error("Invalid test target key: $value")
-            is Outcome.Ok -> result.value
-        }
-
-    private fun attributeKey(value: String): AttributeKey =
-        when (val result = AttributeKey.of(value)) {
-            is Outcome.Err -> error("Invalid test attribute key: $value")
-            is Outcome.Ok -> result.value
-        }
-
-    private fun number(value: Double): RuleValue.NumberValue =
-        when (val result = RuleValue.number(value)) {
-            is Outcome.Err -> error("Invalid test number value: $value")
-            is Outcome.Ok -> result.value
-        }
-
-    private fun version(value: Long): RuleSetVersion =
-        when (val result = RuleSetVersion.of(value)) {
-            is Outcome.Err -> error("Invalid test version: $value")
-            is Outcome.Ok -> result.value
-        }
-
-    private fun ruleId(value: String): RuleId =
-        when (val result = RuleId.of(Uuid.parse(value))) {
-            is Outcome.Err -> error("Invalid test rule id: $value")
-            is Outcome.Ok -> result.value
-        }
-
-    private fun valid(ruleSet: RuleSet) =
-        when (val result = RuleSetValidator.validate(ruleSet)) {
-            is Outcome.Err -> error("Invalid test ruleset: ${result.error}")
-            is Outcome.Ok -> result.value
-        }
 }

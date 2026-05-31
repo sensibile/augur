@@ -1,62 +1,16 @@
-@file:OptIn(kotlin.uuid.ExperimentalUuidApi::class)
-
 package me.sensibile.augur.rule.json
 
-import me.sensibile.augur.rule.AttributeKey
-import me.sensibile.augur.rule.Condition
-import me.sensibile.augur.rule.Flag
-import me.sensibile.augur.rule.FlagKey
-import me.sensibile.augur.rule.Operator
 import me.sensibile.augur.rule.Outcome
-import me.sensibile.augur.rule.Rule
-import me.sensibile.augur.rule.RuleId
 import me.sensibile.augur.rule.RuleSet
 import me.sensibile.augur.rule.RuleSetSnapshot
-import me.sensibile.augur.rule.RuleSetVersion
-import me.sensibile.augur.rule.RuleValue
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
-import kotlin.uuid.Uuid
 
 class RuleJsonTest {
     @Test
     fun `encodes and decodes ruleset`() {
-        val ruleSet =
-            RuleSet(
-                version = version(1),
-                flags =
-                    mapOf(
-                        flagKey("new_checkout") to
-                            Flag(
-                                key = flagKey("new_checkout"),
-                                enabled = true,
-                                defaultValue = bool(false),
-                                rules =
-                                    listOf(
-                                        Rule(
-                                            id = ruleId("01890f2e-7cc3-7cc3-8c4f-123456789abc"),
-                                            condition =
-                                                Condition.All(
-                                                    listOf(
-                                                        Condition.Predicate(
-                                                            attributeKey = attributeKey("country"),
-                                                            operator = Operator.Eq,
-                                                            value = string("KR"),
-                                                        ),
-                                                        Condition.Predicate(
-                                                            attributeKey = attributeKey("plan"),
-                                                            operator = Operator.In,
-                                                            value = list(string("pro"), string("team")),
-                                                        ),
-                                                    ),
-                                                ),
-                                            serve = bool(true),
-                                        ),
-                                    ),
-                            ),
-                    ),
-            )
+        val ruleSet = checkoutRuleSet()
 
         val encoded = RuleJson.encodeRuleSet(ruleSet)
         val decoded = RuleJson.decodeRuleSet(encoded)
@@ -232,75 +186,4 @@ class RuleJsonTest {
             actual,
         )
     }
-
-    private fun bool(value: Boolean): RuleValue.BooleanValue = RuleValue.boolean(value)
-
-    private fun string(value: String): RuleValue.StringValue = RuleValue.string(value)
-
-    private fun list(vararg values: RuleValue): RuleValue.ListValue = RuleValue.list(values.toList())
-
-    private fun ruleSetJson(
-        condition: String,
-        version: Long = 1,
-        ruleId: String = "01890f2e-7cc3-7cc3-8c4f-123456789abc",
-        defaultValue: String = "false",
-        serve: String = "true",
-    ): String =
-        """
-        {
-          "version": $version,
-          "flags": [
-            {
-              "key": "new_checkout",
-              "enabled": true,
-              "defaultValue": $defaultValue,
-              "rules": [
-                {
-                  "id": "$ruleId",
-                  "serve": $serve,
-                  "condition": $condition
-                }
-              ]
-            }
-          ]
-        }
-        """.trimIndent()
-
-    private fun predicateJson(
-        field: String = "country",
-        op: String = "Eq",
-        value: String = """"KR"""",
-    ): String =
-        """
-        {
-          "type": "predicate",
-          "field": "$field",
-          "op": "$op",
-          "value": $value
-        }
-        """.trimIndent()
-
-    private fun flagKey(value: String): FlagKey =
-        when (val result = FlagKey.of(value)) {
-            is Outcome.Err -> error("Invalid test flag key: $value")
-            is Outcome.Ok -> result.value
-        }
-
-    private fun attributeKey(value: String): AttributeKey =
-        when (val result = AttributeKey.of(value)) {
-            is Outcome.Err -> error("Invalid test attribute key: $value")
-            is Outcome.Ok -> result.value
-        }
-
-    private fun version(value: Long): RuleSetVersion =
-        when (val result = RuleSetVersion.of(value)) {
-            is Outcome.Err -> error("Invalid test version: $value")
-            is Outcome.Ok -> result.value
-        }
-
-    private fun ruleId(value: String): RuleId =
-        when (val result = RuleId.of(Uuid.parse(value))) {
-            is Outcome.Err -> error("Invalid test rule id: $value")
-            is Outcome.Ok -> result.value
-        }
 }
