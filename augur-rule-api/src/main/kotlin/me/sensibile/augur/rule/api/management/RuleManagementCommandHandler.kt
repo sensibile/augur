@@ -48,7 +48,10 @@ object RuleManagementCommandHandler {
                 changeRuleServeValue(state, command, eventId)
             }
 
-            is RemoveRule,
+            is RemoveRule -> {
+                removeRule(state, command, eventId)
+            }
+
             is PublishRuleSet,
             is ArchiveRuleSet,
             -> {
@@ -235,6 +238,24 @@ object RuleManagementCommandHandler {
                         ),
                     )
                 }
+            }
+
+    private fun removeRule(
+        state: RuleSetDraftState?,
+        command: RemoveRule,
+        eventId: RuleManagementEventId,
+    ): Outcome<RuleManagementCommandError, RuleRemoved> =
+        state
+            .requireEditableRule(command.draftId, command.flagKey, command.ruleId)
+            .flatMap {
+                Outcome.Ok(
+                    RuleRemoved(
+                        eventId = eventId,
+                        draftId = command.draftId,
+                        flagKey = command.flagKey,
+                        ruleId = command.ruleId,
+                    ),
+                )
             }
 
     private fun validateRuleSetDraft(

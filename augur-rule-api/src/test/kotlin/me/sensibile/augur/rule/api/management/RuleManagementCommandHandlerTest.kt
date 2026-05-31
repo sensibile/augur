@@ -394,6 +394,78 @@ class RuleManagementCommandHandlerTest {
     }
 
     @Test
+    fun `removes rule from editable draft`() {
+        val rule = rule()
+        val flag = flag("new_checkout", rules = listOf(rule))
+        val state = draftState(flags = mapOf(flag.key to flag))
+        val eventId = eventId()
+        val command = RemoveRule(draftId = state.draftId, flagKey = flag.key, ruleId = rule.id)
+
+        val actual = RuleManagementCommandHandler.handle(state = state, command = command, eventId = eventId)
+
+        assertEquals(
+            Outcome.Ok(
+                RuleRemoved(
+                    eventId = eventId,
+                    draftId = state.draftId,
+                    flagKey = flag.key,
+                    ruleId = rule.id,
+                ),
+            ),
+            actual,
+        )
+    }
+
+    @Test
+    fun `rejects remove rule when flag does not exist`() {
+        val state = draftState()
+        val flagKey = flagKey("new_checkout")
+        val ruleId = ruleId()
+        val command = RemoveRule(draftId = state.draftId, flagKey = flagKey, ruleId = ruleId)
+
+        val actual = RuleManagementCommandHandler.handle(state = state, command = command, eventId = eventId())
+
+        assertEquals(
+            Outcome.Err(RuleManagementCommandError.FlagNotFound(state.draftId, flagKey)),
+            actual,
+        )
+    }
+
+    @Test
+    fun `rejects remove rule when rule does not exist`() {
+        val flag = flag("new_checkout")
+        val state = draftState(flags = mapOf(flag.key to flag))
+        val missingRuleId = ruleId("018ff7c1-9354-7b02-b021-76d2791d6a24")
+        val command = RemoveRule(draftId = state.draftId, flagKey = flag.key, ruleId = missingRuleId)
+
+        val actual = RuleManagementCommandHandler.handle(state = state, command = command, eventId = eventId())
+
+        assertEquals(
+            Outcome.Err(RuleManagementCommandError.RuleNotFound(state.draftId, flag.key, missingRuleId)),
+            actual,
+        )
+    }
+
+    @Test
+    fun `rejects remove rule when draft is not editable`() {
+        val rule = rule()
+        val flag = flag("new_checkout", rules = listOf(rule))
+        val state =
+            draftState(
+                flags = mapOf(flag.key to flag),
+                status = RuleSetDraftStatus.Validated,
+            )
+        val command = RemoveRule(draftId = state.draftId, flagKey = flag.key, ruleId = rule.id)
+
+        val actual = RuleManagementCommandHandler.handle(state = state, command = command, eventId = eventId())
+
+        assertEquals(
+            Outcome.Err(RuleManagementCommandError.DraftIsNotEditable(state.draftId, RuleSetDraftStatus.Validated)),
+            actual,
+        )
+    }
+
+    @Test
     fun `validates valid draft`() {
         val state = draftState(flags = mapOf(flagKey("new_checkout") to flag("new_checkout")))
         val eventId = eventId()

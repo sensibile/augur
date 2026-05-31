@@ -152,6 +152,27 @@ class RuleManagementEventApplierTest {
     }
 
     @Test
+    fun `applies rule removed event`() {
+        val removedRule = rule()
+        val remainingRule = rule("018ff7c1-9354-7b02-b021-76d2791d6a24")
+        val flag = flag("new_checkout", rules = listOf(removedRule, remainingRule))
+        val state = draftState(flags = mapOf(flag.key to flag))
+        val event =
+            RuleRemoved(
+                eventId = eventId(),
+                draftId = state.draftId,
+                flagKey = flag.key,
+                ruleId = removedRule.id,
+            )
+
+        val actual = RuleManagementEventApplier.apply(state = state, event = event)
+
+        val updated = (actual as Outcome.Ok).value
+        assertEquals(listOf(remainingRule), updated.flags.getValue(flag.key).rules)
+        assertEquals(RuleSetDraftStatus.Draft, updated.status)
+    }
+
+    @Test
     fun `applies draft validated event`() {
         val state = draftState()
         val event =
@@ -205,9 +226,9 @@ class RuleManagementEventApplierTest {
             rules = rules,
         )
 
-    private fun rule(): Rule =
+    private fun rule(id: String = "018ff7c1-9354-7b02-b021-76d2791d6a23"): Rule =
         Rule(
-            id = ruleId(),
+            id = ruleId(id),
             condition =
                 Condition.Predicate(
                     attributeKey = attributeKey("country"),
@@ -247,8 +268,8 @@ class RuleManagementEventApplierTest {
             is Outcome.Ok -> key.value
         }
 
-    private fun ruleId(): RuleId =
-        when (val ruleId = RuleId.of(Uuid.parse("018ff7c1-9354-7b02-b021-76d2791d6a23"))) {
+    private fun ruleId(value: String = "018ff7c1-9354-7b02-b021-76d2791d6a23"): RuleId =
+        when (val ruleId = RuleId.of(Uuid.parse(value))) {
             is Outcome.Err -> error("Invalid test rule id: ${ruleId.error}")
             is Outcome.Ok -> ruleId.value
         }
