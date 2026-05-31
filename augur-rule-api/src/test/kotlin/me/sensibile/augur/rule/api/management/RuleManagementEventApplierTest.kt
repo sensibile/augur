@@ -49,6 +49,32 @@ class RuleManagementEventApplierTest {
     }
 
     @Test
+    fun `applies flag enabled event`() {
+        val flag = flag("new_checkout", enabled = false)
+        val state = draftState(flags = mapOf(flag.key to flag))
+        val event = FlagEnabled(eventId = eventId(), draftId = state.draftId, flagKey = flag.key)
+
+        val actual = RuleManagementEventApplier.apply(state = state, event = event)
+
+        val updated = (actual as Outcome.Ok).value
+        assertEquals(true, updated.flags.getValue(flag.key).enabled)
+        assertEquals(RuleSetDraftStatus.Draft, updated.status)
+    }
+
+    @Test
+    fun `applies flag disabled event`() {
+        val flag = flag("new_checkout", enabled = true)
+        val state = draftState(flags = mapOf(flag.key to flag))
+        val event = FlagDisabled(eventId = eventId(), draftId = state.draftId, flagKey = flag.key)
+
+        val actual = RuleManagementEventApplier.apply(state = state, event = event)
+
+        val updated = (actual as Outcome.Ok).value
+        assertEquals(false, updated.flags.getValue(flag.key).enabled)
+        assertEquals(RuleSetDraftStatus.Draft, updated.status)
+    }
+
+    @Test
     fun `applies rule added event`() {
         val flag = flag("new_checkout")
         val state = draftState(flags = mapOf(flag.key to flag))
@@ -135,11 +161,12 @@ class RuleManagementEventApplierTest {
 
     private fun flag(
         key: String,
+        enabled: Boolean = true,
         rules: List<Rule> = emptyList(),
     ): Flag =
         Flag(
             key = flagKey(key),
-            enabled = true,
+            enabled = enabled,
             defaultValue = RuleValue.boolean(false),
             rules = rules,
         )

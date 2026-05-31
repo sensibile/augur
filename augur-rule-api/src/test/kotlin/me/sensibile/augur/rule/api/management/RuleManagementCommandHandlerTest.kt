@@ -78,6 +78,68 @@ class RuleManagementCommandHandlerTest {
     }
 
     @Test
+    fun `enables flag in editable draft`() {
+        val flag = flag("new_checkout", enabled = false)
+        val state = draftState(flags = mapOf(flag.key to flag))
+        val eventId = eventId()
+        val command = EnableFlag(draftId = state.draftId, flagKey = flag.key)
+
+        val actual = RuleManagementCommandHandler.handle(state = state, command = command, eventId = eventId)
+
+        assertEquals(
+            Outcome.Ok(FlagEnabled(eventId = eventId, draftId = state.draftId, flagKey = flag.key)),
+            actual,
+        )
+    }
+
+    @Test
+    fun `disables flag in editable draft`() {
+        val flag = flag("new_checkout", enabled = true)
+        val state = draftState(flags = mapOf(flag.key to flag))
+        val eventId = eventId()
+        val command = DisableFlag(draftId = state.draftId, flagKey = flag.key)
+
+        val actual = RuleManagementCommandHandler.handle(state = state, command = command, eventId = eventId)
+
+        assertEquals(
+            Outcome.Ok(FlagDisabled(eventId = eventId, draftId = state.draftId, flagKey = flag.key)),
+            actual,
+        )
+    }
+
+    @Test
+    fun `rejects flag status change when flag does not exist`() {
+        val state = draftState()
+        val flagKey = flagKey("new_checkout")
+        val command = EnableFlag(draftId = state.draftId, flagKey = flagKey)
+
+        val actual = RuleManagementCommandHandler.handle(state = state, command = command, eventId = eventId())
+
+        assertEquals(
+            Outcome.Err(RuleManagementCommandError.FlagNotFound(state.draftId, flagKey)),
+            actual,
+        )
+    }
+
+    @Test
+    fun `rejects flag status change when draft is not editable`() {
+        val flag = flag("new_checkout")
+        val state =
+            draftState(
+                flags = mapOf(flag.key to flag),
+                status = RuleSetDraftStatus.Validated,
+            )
+        val command = DisableFlag(draftId = state.draftId, flagKey = flag.key)
+
+        val actual = RuleManagementCommandHandler.handle(state = state, command = command, eventId = eventId())
+
+        assertEquals(
+            Outcome.Err(RuleManagementCommandError.DraftIsNotEditable(state.draftId, RuleSetDraftStatus.Validated)),
+            actual,
+        )
+    }
+
+    @Test
     fun `adds rule to editable draft flag`() {
         val flag = flag("new_checkout")
         val state = draftState(flags = mapOf(flag.key to flag))
@@ -210,11 +272,12 @@ class RuleManagementCommandHandlerTest {
 
     private fun flag(
         key: String,
+        enabled: Boolean = true,
         rules: List<Rule> = emptyList(),
     ): Flag =
         Flag(
             key = flagKey(key),
-            enabled = true,
+            enabled = enabled,
             defaultValue = RuleValue.boolean(false),
             rules = rules,
         )

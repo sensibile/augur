@@ -26,12 +26,18 @@ object RuleManagementCommandHandler {
                 addRule(state, command, eventId)
             }
 
+            is EnableFlag -> {
+                enableFlag(state, command, eventId)
+            }
+
+            is DisableFlag -> {
+                disableFlag(state, command, eventId)
+            }
+
             is ValidateRuleSetDraft -> {
                 validateRuleSetDraft(state, command, eventId)
             }
 
-            is EnableFlag,
-            is DisableFlag,
             is ChangeRuleCondition,
             is ChangeRuleServeValue,
             is RemoveRule,
@@ -88,25 +94,50 @@ object RuleManagementCommandHandler {
                 }
             }
 
+    private fun enableFlag(
+        state: RuleSetDraftState?,
+        command: EnableFlag,
+        eventId: RuleManagementEventId,
+    ): Outcome<RuleManagementCommandError, FlagEnabled> =
+        state
+            .requireEditableFlag(command.draftId, command.flagKey)
+            .flatMap {
+                Outcome.Ok(
+                    FlagEnabled(
+                        eventId = eventId,
+                        draftId = command.draftId,
+                        flagKey = command.flagKey,
+                    ),
+                )
+            }
+
+    private fun disableFlag(
+        state: RuleSetDraftState?,
+        command: DisableFlag,
+        eventId: RuleManagementEventId,
+    ): Outcome<RuleManagementCommandError, FlagDisabled> =
+        state
+            .requireEditableFlag(command.draftId, command.flagKey)
+            .flatMap {
+                Outcome.Ok(
+                    FlagDisabled(
+                        eventId = eventId,
+                        draftId = command.draftId,
+                        flagKey = command.flagKey,
+                    ),
+                )
+            }
+
     private fun addRule(
         state: RuleSetDraftState?,
         command: AddRule,
         eventId: RuleManagementEventId,
     ): Outcome<RuleManagementCommandError, RuleAdded> =
         state
-            .requireDraft(command.draftId)
+            .requireEditableFlag(command.draftId, command.flagKey)
             .flatMap { draft ->
-                val flag = draft.flags[command.flagKey]
                 val existingRuleFlagKey = draft.findRuleFlagKey(command.rule.id)
                 when {
-                    draft.status != RuleSetDraftStatus.Draft -> {
-                        Outcome.Err(RuleManagementCommandError.DraftIsNotEditable(command.draftId, draft.status))
-                    }
-
-                    flag == null -> {
-                        Outcome.Err(RuleManagementCommandError.FlagNotFound(command.draftId, command.flagKey))
-                    }
-
                     existingRuleFlagKey != null -> {
                         Outcome.Err(
                             RuleManagementCommandError.RuleAlreadyExists(
@@ -207,6 +238,27 @@ private fun RuleSetDraftState?.requireDraft(draftId: RuleSetDraftId): Outcome<Ru
         this.draftId != draftId -> Outcome.Err(RuleManagementCommandError.DraftIdMismatch(expected = this.draftId, actual = draftId))
         else -> Outcome.Ok(this)
     }
+
+private fun RuleSetDraftState?.requireEditableFlag(
+    draftId: RuleSetDraftId,
+    flagKey: FlagKey,
+): Outcome<RuleManagementCommandError, RuleSetDraftState> =
+    requireDraft(draftId)
+        .flatMap { draft ->
+            when {
+                draft.status != RuleSetDraftStatus.Draft -> {
+                    Outcome.Err(RuleManagementCommandError.DraftIsNotEditable(draftId, draft.status))
+                }
+
+                flagKey !in draft.flags -> {
+                    Outcome.Err(RuleManagementCommandError.FlagNotFound(draftId, flagKey))
+                }
+
+                else -> {
+                    Outcome.Ok(draft)
+                }
+            }
+        }
 
 private fun RuleSetDraftState.findRuleFlagKey(ruleId: RuleId): FlagKey? =
     flags.values
