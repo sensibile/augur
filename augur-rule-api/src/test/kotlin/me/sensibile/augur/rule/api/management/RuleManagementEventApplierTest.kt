@@ -118,6 +118,40 @@ class RuleManagementEventApplierTest {
     }
 
     @Test
+    fun `applies rule condition changed event`() {
+        val rule = rule()
+        val flag = flag("new_checkout", rules = listOf(rule))
+        val state = draftState(flags = mapOf(flag.key to flag))
+        val condition =
+            Condition.Predicate(
+                attributeKey = attributeKey("tier"),
+                operator = Operator.Eq,
+                value = RuleValue.string("pro"),
+            )
+        val event =
+            RuleConditionChanged(
+                eventId = eventId(),
+                draftId = state.draftId,
+                flagKey = flag.key,
+                ruleId = rule.id,
+                condition = condition,
+            )
+
+        val actual = RuleManagementEventApplier.apply(state = state, event = event)
+
+        val updated = (actual as Outcome.Ok).value
+        assertEquals(
+            condition,
+            updated
+                .flags
+                .getValue(flag.key)
+                .rules
+                .single()
+                .condition,
+        )
+    }
+
+    @Test
     fun `applies draft validated event`() {
         val state = draftState()
         val event =

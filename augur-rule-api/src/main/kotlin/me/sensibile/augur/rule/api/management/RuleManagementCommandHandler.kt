@@ -5,7 +5,9 @@ import me.sensibile.augur.rule.Outcome
 import me.sensibile.augur.rule.RuleId
 import me.sensibile.augur.rule.RuleSetValidationError
 import me.sensibile.augur.rule.RuleSetValidator
+import me.sensibile.augur.rule.RuleValueType
 import me.sensibile.augur.rule.flatMap
+import me.sensibile.augur.rule.type
 
 object RuleManagementCommandHandler {
     fun handle(
@@ -38,8 +40,14 @@ object RuleManagementCommandHandler {
                 validateRuleSetDraft(state, command, eventId)
             }
 
-            is ChangeRuleCondition,
-            is ChangeRuleServeValue,
+            is ChangeRuleCondition -> {
+                changeRuleCondition(state, command, eventId)
+            }
+
+            is ChangeRuleServeValue -> {
+                changeRuleServeValue(state, command, eventId)
+            }
+
             is RemoveRule,
             is PublishRuleSet,
             is ArchiveRuleSet,
@@ -137,6 +145,9 @@ object RuleManagementCommandHandler {
             .requireEditableFlag(command.draftId, command.flagKey)
             .flatMap { draft ->
                 val existingRuleFlagKey = draft.findRuleFlagKey(command.rule.id)
+                val flag = draft.flags.getValue(command.flagKey)
+                val expectedServeType = flag.defaultValue.type()
+                val actualServeType = command.rule.serve.type()
                 when {
                     existingRuleFlagKey != null -> {
                         Outcome.Err(
@@ -144,6 +155,18 @@ object RuleManagementCommandHandler {
                                 draftId = command.draftId,
                                 ruleId = command.rule.id,
                                 existingFlagKey = existingRuleFlagKey,
+                            ),
+                        )
+                    }
+
+                    actualServeType != expectedServeType -> {
+                        Outcome.Err(
+                            RuleManagementCommandError.ServeTypeMismatch(
+                                draftId = command.draftId,
+                                flagKey = command.flagKey,
+                                ruleId = command.rule.id,
+                                expected = expectedServeType,
+                                actual = actualServeType,
                             ),
                         )
                     }
@@ -158,6 +181,59 @@ object RuleManagementCommandHandler {
                             ),
                         )
                     }
+                }
+            }
+
+    private fun changeRuleCondition(
+        state: RuleSetDraftState?,
+        command: ChangeRuleCondition,
+        eventId: RuleManagementEventId,
+    ): Outcome<RuleManagementCommandError, RuleConditionChanged> =
+        state
+            .requireEditableRule(command.draftId, command.flagKey, command.ruleId)
+            .flatMap {
+                Outcome.Ok(
+                    RuleConditionChanged(
+                        eventId = eventId,
+                        draftId = command.draftId,
+                        flagKey = command.flagKey,
+                        ruleId = command.ruleId,
+                        condition = command.condition,
+                    ),
+                )
+            }
+
+    private fun changeRuleServeValue(
+        state: RuleSetDraftState?,
+        command: ChangeRuleServeValue,
+        eventId: RuleManagementEventId,
+    ): Outcome<RuleManagementCommandError, RuleServeValueChanged> =
+        state
+            .requireEditableRule(command.draftId, command.flagKey, command.ruleId)
+            .flatMap { draft ->
+                val flag = draft.flags.getValue(command.flagKey)
+                val expectedType = flag.defaultValue.type()
+                val actualType = command.serve.type()
+                if (expectedType == actualType) {
+                    Outcome.Ok(
+                        RuleServeValueChanged(
+                            eventId = eventId,
+                            draftId = command.draftId,
+                            flagKey = command.flagKey,
+                            ruleId = command.ruleId,
+                            serve = command.serve,
+                        ),
+                    )
+                } else {
+                    Outcome.Err(
+                        RuleManagementCommandError.ServeTypeMismatch(
+                            draftId = command.draftId,
+                            flagKey = command.flagKey,
+                            ruleId = command.ruleId,
+                            expected = expectedType,
+                            actual = actualType,
+                        ),
+                    )
                 }
             }
 
@@ -222,6 +298,20 @@ sealed interface RuleManagementCommandError {
         val existingFlagKey: FlagKey,
     ) : RuleManagementCommandError
 
+    data class RuleNotFound(
+        val draftId: RuleSetDraftId,
+        val flagKey: FlagKey,
+        val ruleId: RuleId,
+    ) : RuleManagementCommandError
+
+    data class ServeTypeMismatch(
+        val draftId: RuleSetDraftId,
+        val flagKey: FlagKey,
+        val ruleId: RuleId,
+        val expected: RuleValueType,
+        val actual: RuleValueType,
+    ) : RuleManagementCommandError
+
     data class InvalidRuleSetDraft(
         val draftId: RuleSetDraftId,
         val error: RuleSetValidationError,
@@ -257,6 +347,25 @@ private fun RuleSetDraftState?.requireEditableFlag(
                 else -> {
                     Outcome.Ok(draft)
                 }
+            }
+        }
+
+private fun RuleSetDraftState?.requireEditableRule(
+    draftId: RuleSetDraftId,
+    flagKey: FlagKey,
+    ruleId: RuleId,
+): Outcome<RuleManagementCommandError, RuleSetDraftState> =
+    requireEditableFlag(draftId, flagKey)
+        .flatMap { draft ->
+            val ruleExists =
+                draft.flags
+                    .getValue(flagKey)
+                    .rules
+                    .any { rule -> rule.id == ruleId }
+            if (ruleExists) {
+                Outcome.Ok(draft)
+            } else {
+                Outcome.Err(RuleManagementCommandError.RuleNotFound(draftId, flagKey, ruleId))
             }
         }
 
