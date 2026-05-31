@@ -2,6 +2,7 @@ package me.sensibile.augur.rule.api.management
 
 import me.sensibile.augur.rule.FlagKey
 import me.sensibile.augur.rule.Outcome
+import me.sensibile.augur.rule.RuleId
 import me.sensibile.augur.rule.RuleSetValidationError
 import me.sensibile.augur.rule.RuleSetValidator
 import me.sensibile.augur.rule.flatMap
@@ -21,13 +22,16 @@ object RuleManagementCommandHandler {
                 addFlag(state, command, eventId)
             }
 
+            is AddRule -> {
+                addRule(state, command, eventId)
+            }
+
             is ValidateRuleSetDraft -> {
                 validateRuleSetDraft(state, command, eventId)
             }
 
             is EnableFlag,
             is DisableFlag,
-            is AddRule,
             is ChangeRuleCondition,
             is ChangeRuleServeValue,
             is RemoveRule,
@@ -84,6 +88,48 @@ object RuleManagementCommandHandler {
                 }
             }
 
+    private fun addRule(
+        state: RuleSetDraftState?,
+        command: AddRule,
+        eventId: RuleManagementEventId,
+    ): Outcome<RuleManagementCommandError, RuleAdded> =
+        state
+            .requireDraft(command.draftId)
+            .flatMap { draft ->
+                val flag = draft.flags[command.flagKey]
+                val existingRuleFlagKey = draft.findRuleFlagKey(command.rule.id)
+                when {
+                    draft.status != RuleSetDraftStatus.Draft -> {
+                        Outcome.Err(RuleManagementCommandError.DraftIsNotEditable(command.draftId, draft.status))
+                    }
+
+                    flag == null -> {
+                        Outcome.Err(RuleManagementCommandError.FlagNotFound(command.draftId, command.flagKey))
+                    }
+
+                    existingRuleFlagKey != null -> {
+                        Outcome.Err(
+                            RuleManagementCommandError.RuleAlreadyExists(
+                                draftId = command.draftId,
+                                ruleId = command.rule.id,
+                                existingFlagKey = existingRuleFlagKey,
+                            ),
+                        )
+                    }
+
+                    else -> {
+                        Outcome.Ok(
+                            RuleAdded(
+                                eventId = eventId,
+                                draftId = command.draftId,
+                                flagKey = command.flagKey,
+                                rule = command.rule,
+                            ),
+                        )
+                    }
+                }
+            }
+
     private fun validateRuleSetDraft(
         state: RuleSetDraftState?,
         command: ValidateRuleSetDraft,
@@ -134,6 +180,17 @@ sealed interface RuleManagementCommandError {
         val flagKey: FlagKey,
     ) : RuleManagementCommandError
 
+    data class FlagNotFound(
+        val draftId: RuleSetDraftId,
+        val flagKey: FlagKey,
+    ) : RuleManagementCommandError
+
+    data class RuleAlreadyExists(
+        val draftId: RuleSetDraftId,
+        val ruleId: RuleId,
+        val existingFlagKey: FlagKey,
+    ) : RuleManagementCommandError
+
     data class InvalidRuleSetDraft(
         val draftId: RuleSetDraftId,
         val error: RuleSetValidationError,
@@ -150,3 +207,9 @@ private fun RuleSetDraftState?.requireDraft(draftId: RuleSetDraftId): Outcome<Ru
         this.draftId != draftId -> Outcome.Err(RuleManagementCommandError.DraftIdMismatch(expected = this.draftId, actual = draftId))
         else -> Outcome.Ok(this)
     }
+
+private fun RuleSetDraftState.findRuleFlagKey(ruleId: RuleId): FlagKey? =
+    flags.values
+        .firstOrNull { flag ->
+            flag.rules.any { rule -> rule.id == ruleId }
+        }?.key

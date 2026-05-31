@@ -1,7 +1,10 @@
 package me.sensibile.augur.rule.api.management
 
+import me.sensibile.augur.rule.AttributeKey
+import me.sensibile.augur.rule.Condition
 import me.sensibile.augur.rule.Flag
 import me.sensibile.augur.rule.FlagKey
+import me.sensibile.augur.rule.Operator
 import me.sensibile.augur.rule.Outcome
 import me.sensibile.augur.rule.Rule
 import me.sensibile.augur.rule.RuleId
@@ -70,6 +73,77 @@ class RuleManagementCommandHandlerTest {
 
         assertEquals(
             Outcome.Err(RuleManagementCommandError.FlagAlreadyExists(state.draftId, flag.key)),
+            actual,
+        )
+    }
+
+    @Test
+    fun `adds rule to editable draft flag`() {
+        val flag = flag("new_checkout")
+        val state = draftState(flags = mapOf(flag.key to flag))
+        val eventId = eventId()
+        val rule = rule()
+        val command = AddRule(draftId = state.draftId, flagKey = flag.key, rule = rule)
+
+        val actual = RuleManagementCommandHandler.handle(state = state, command = command, eventId = eventId)
+
+        assertEquals(
+            Outcome.Ok(RuleAdded(eventId = eventId, draftId = state.draftId, flagKey = flag.key, rule = rule)),
+            actual,
+        )
+    }
+
+    @Test
+    fun `rejects add rule when flag does not exist`() {
+        val state = draftState()
+        val flagKey = flagKey("new_checkout")
+        val command = AddRule(draftId = state.draftId, flagKey = flagKey, rule = rule())
+
+        val actual = RuleManagementCommandHandler.handle(state = state, command = command, eventId = eventId())
+
+        assertEquals(
+            Outcome.Err(RuleManagementCommandError.FlagNotFound(state.draftId, flagKey)),
+            actual,
+        )
+    }
+
+    @Test
+    fun `rejects add rule when rule id already exists in draft`() {
+        val rule = rule()
+        val existingFlag = flag("new_checkout", rules = listOf(rule))
+        val targetFlag = flag("pricing_banner")
+        val state =
+            draftState(
+                flags =
+                    mapOf(
+                        existingFlag.key to existingFlag,
+                        targetFlag.key to targetFlag,
+                    ),
+            )
+        val command = AddRule(draftId = state.draftId, flagKey = targetFlag.key, rule = rule)
+
+        val actual = RuleManagementCommandHandler.handle(state = state, command = command, eventId = eventId())
+
+        assertEquals(
+            Outcome.Err(RuleManagementCommandError.RuleAlreadyExists(state.draftId, rule.id, existingFlag.key)),
+            actual,
+        )
+    }
+
+    @Test
+    fun `rejects add rule when draft is not editable`() {
+        val flag = flag("new_checkout")
+        val state =
+            draftState(
+                flags = mapOf(flag.key to flag),
+                status = RuleSetDraftStatus.Validated,
+            )
+        val command = AddRule(draftId = state.draftId, flagKey = flag.key, rule = rule())
+
+        val actual = RuleManagementCommandHandler.handle(state = state, command = command, eventId = eventId())
+
+        assertEquals(
+            Outcome.Err(RuleManagementCommandError.DraftIsNotEditable(state.draftId, RuleSetDraftStatus.Validated)),
             actual,
         )
     }
@@ -145,6 +219,18 @@ class RuleManagementCommandHandlerTest {
             rules = rules,
         )
 
+    private fun rule(): Rule =
+        Rule(
+            id = ruleId(),
+            condition =
+                Condition.Predicate(
+                    attributeKey = attributeKey("country"),
+                    operator = Operator.Eq,
+                    value = RuleValue.string("KR"),
+                ),
+            serve = RuleValue.boolean(true),
+        )
+
     private fun draftId(): RuleSetDraftId =
         when (val draftId = RuleSetDraftId.of(Uuid.parse("018ff7c1-9354-7b02-b021-76d2791d6a21"))) {
             is Outcome.Err -> error("Invalid test draft id: ${draftId.error}")
@@ -166,6 +252,12 @@ class RuleManagementCommandHandlerTest {
     private fun flagKey(value: String): FlagKey =
         when (val key = FlagKey.of(value)) {
             is Outcome.Err -> error("Invalid test flag key: ${key.error}")
+            is Outcome.Ok -> key.value
+        }
+
+    private fun attributeKey(value: String): AttributeKey =
+        when (val key = AttributeKey.of(value)) {
+            is Outcome.Err -> error("Invalid test attribute key: ${key.error}")
             is Outcome.Ok -> key.value
         }
 

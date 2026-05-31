@@ -172,6 +172,8 @@ Use it as factual source material when updating human-authored documentation.
 - `data class DraftIdMismatch` (augur-rule-api/src/main/kotlin/me/sensibile/augur/rule/api/management/RuleManagementCommandHandler.kt)
 - `data class DraftIsNotEditable` (augur-rule-api/src/main/kotlin/me/sensibile/augur/rule/api/management/RuleManagementCommandHandler.kt)
 - `data class FlagAlreadyExists` (augur-rule-api/src/main/kotlin/me/sensibile/augur/rule/api/management/RuleManagementCommandHandler.kt)
+- `data class FlagNotFound` (augur-rule-api/src/main/kotlin/me/sensibile/augur/rule/api/management/RuleManagementCommandHandler.kt)
+- `data class RuleAlreadyExists` (augur-rule-api/src/main/kotlin/me/sensibile/augur/rule/api/management/RuleManagementCommandHandler.kt)
 - `data class InvalidRuleSetDraft` (augur-rule-api/src/main/kotlin/me/sensibile/augur/rule/api/management/RuleManagementCommandHandler.kt)
 - `data class UnsupportedCommand` (augur-rule-api/src/main/kotlin/me/sensibile/augur/rule/api/management/RuleManagementCommandHandler.kt)
 - `sealed interface RuleManagementEvent` (augur-rule-api/src/main/kotlin/me/sensibile/augur/rule/api/management/RuleManagementEvent.kt)

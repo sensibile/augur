@@ -49,6 +49,20 @@ class RuleManagementEventApplierTest {
     }
 
     @Test
+    fun `applies rule added event`() {
+        val flag = flag("new_checkout")
+        val state = draftState(flags = mapOf(flag.key to flag))
+        val rule = rule()
+        val event = RuleAdded(eventId = eventId(), draftId = state.draftId, flagKey = flag.key, rule = rule)
+
+        val actual = RuleManagementEventApplier.apply(state = state, event = event)
+
+        val updated = (actual as Outcome.Ok).value
+        assertEquals(listOf(rule), updated.flags.getValue(flag.key).rules)
+        assertEquals(RuleSetDraftStatus.Draft, updated.status)
+    }
+
+    @Test
     fun `applies rule changed events`() {
         val rule = rule()
         val flag = flag("new_checkout", rules = listOf(rule))
