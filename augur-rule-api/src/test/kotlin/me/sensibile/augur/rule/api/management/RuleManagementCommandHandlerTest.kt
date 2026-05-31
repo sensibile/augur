@@ -1,0 +1,177 @@
+package me.sensibile.augur.rule.api.management
+
+import me.sensibile.augur.rule.Flag
+import me.sensibile.augur.rule.FlagKey
+import me.sensibile.augur.rule.Outcome
+import me.sensibile.augur.rule.Rule
+import me.sensibile.augur.rule.RuleId
+import me.sensibile.augur.rule.RuleSetVersion
+import me.sensibile.augur.rule.RuleValue
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertIs
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
+
+@OptIn(ExperimentalUuidApi::class)
+class RuleManagementCommandHandlerTest {
+    @Test
+    fun `creates draft when no state exists`() {
+        val draftId = draftId()
+        val eventId = eventId("018ff7c1-9354-7b02-b021-76d2791d6a22")
+        val command = CreateRuleSetDraft(draftId = draftId, ruleSetVersion = version(1))
+
+        val actual = RuleManagementCommandHandler.handle(state = null, command = command, eventId = eventId)
+
+        assertEquals(
+            Outcome.Ok(
+                RuleSetDraftCreated(
+                    eventId = eventId,
+                    draftId = draftId,
+                    ruleSetVersion = version(1),
+                ),
+            ),
+            actual,
+        )
+    }
+
+    @Test
+    fun `rejects create draft when state already exists`() {
+        val state = draftState()
+        val command = CreateRuleSetDraft(draftId = state.draftId, ruleSetVersion = version(1))
+
+        val actual = RuleManagementCommandHandler.handle(state = state, command = command, eventId = eventId())
+
+        assertEquals(Outcome.Err(RuleManagementCommandError.DraftAlreadyExists(state.draftId)), actual)
+    }
+
+    @Test
+    fun `adds flag to editable draft`() {
+        val state = draftState()
+        val eventId = eventId()
+        val flag = flag("new_checkout")
+        val command = AddFlag(draftId = state.draftId, flag = flag)
+
+        val actual = RuleManagementCommandHandler.handle(state = state, command = command, eventId = eventId)
+
+        assertEquals(
+            Outcome.Ok(FlagAdded(eventId = eventId, draftId = state.draftId, flag = flag)),
+            actual,
+        )
+    }
+
+    @Test
+    fun `rejects duplicate flag`() {
+        val flag = flag("new_checkout")
+        val state = draftState(flags = mapOf(flag.key to flag))
+        val command = AddFlag(draftId = state.draftId, flag = flag)
+
+        val actual = RuleManagementCommandHandler.handle(state = state, command = command, eventId = eventId())
+
+        assertEquals(
+            Outcome.Err(RuleManagementCommandError.FlagAlreadyExists(state.draftId, flag.key)),
+            actual,
+        )
+    }
+
+    @Test
+    fun `validates valid draft`() {
+        val state = draftState(flags = mapOf(flagKey("new_checkout") to flag("new_checkout")))
+        val eventId = eventId()
+        val command = ValidateRuleSetDraft(draftId = state.draftId)
+
+        val actual = RuleManagementCommandHandler.handle(state = state, command = command, eventId = eventId)
+
+        assertEquals(
+            Outcome.Ok(
+                RuleSetDraftValidated(
+                    eventId = eventId,
+                    draftId = state.draftId,
+                    ruleSetVersion = state.ruleSetVersion,
+                ),
+            ),
+            actual,
+        )
+    }
+
+    @Test
+    fun `rejects invalid draft`() {
+        val state =
+            draftState(
+                flags =
+                    mapOf(
+                        flagKey("new_checkout") to
+                            flag(
+                                key = "wrong_key",
+                            ),
+                    ),
+            )
+        val command = ValidateRuleSetDraft(draftId = state.draftId)
+
+        val actual = RuleManagementCommandHandler.handle(state = state, command = command, eventId = eventId())
+
+        assertIs<Outcome.Err<RuleManagementCommandError.InvalidRuleSetDraft>>(actual)
+    }
+
+    @Test
+    fun `rejects unsupported commands explicitly`() {
+        val state = draftState()
+        val command = ArchiveRuleSet(draftId = state.draftId)
+
+        val actual = RuleManagementCommandHandler.handle(state = state, command = command, eventId = eventId())
+
+        assertEquals(Outcome.Err(RuleManagementCommandError.UnsupportedCommand("ArchiveRuleSet")), actual)
+    }
+
+    private fun draftState(
+        flags: Map<FlagKey, Flag> = emptyMap(),
+        status: RuleSetDraftStatus = RuleSetDraftStatus.Draft,
+    ): RuleSetDraftState =
+        RuleSetDraftState(
+            draftId = draftId(),
+            ruleSetVersion = version(1),
+            flags = flags,
+            status = status,
+        )
+
+    private fun flag(
+        key: String,
+        rules: List<Rule> = emptyList(),
+    ): Flag =
+        Flag(
+            key = flagKey(key),
+            enabled = true,
+            defaultValue = RuleValue.boolean(false),
+            rules = rules,
+        )
+
+    private fun draftId(): RuleSetDraftId =
+        when (val draftId = RuleSetDraftId.of(Uuid.parse("018ff7c1-9354-7b02-b021-76d2791d6a21"))) {
+            is Outcome.Err -> error("Invalid test draft id: ${draftId.error}")
+            is Outcome.Ok -> draftId.value
+        }
+
+    private fun eventId(value: String = "018ff7c1-9354-7b02-b021-76d2791d6a22"): RuleManagementEventId =
+        when (val eventId = RuleManagementEventId.of(Uuid.parse(value))) {
+            is Outcome.Err -> error("Invalid test event id: ${eventId.error}")
+            is Outcome.Ok -> eventId.value
+        }
+
+    private fun version(value: Long): RuleSetVersion =
+        when (val version = RuleSetVersion.of(value)) {
+            is Outcome.Err -> error("Invalid test version: ${version.error}")
+            is Outcome.Ok -> version.value
+        }
+
+    private fun flagKey(value: String): FlagKey =
+        when (val key = FlagKey.of(value)) {
+            is Outcome.Err -> error("Invalid test flag key: ${key.error}")
+            is Outcome.Ok -> key.value
+        }
+
+    private fun ruleId(value: String = "018ff7c1-9354-7b02-b021-76d2791d6a23"): RuleId =
+        when (val ruleId = RuleId.of(Uuid.parse(value))) {
+            is Outcome.Err -> error("Invalid test rule id: ${ruleId.error}")
+            is Outcome.Ok -> ruleId.value
+        }
+}
