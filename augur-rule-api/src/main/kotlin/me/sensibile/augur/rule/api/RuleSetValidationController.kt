@@ -38,9 +38,3 @@ class RuleSetValidationController(
             }
         }
 }
-
-data class RuleSetValidationResponse(
-    val valid: Boolean,
-    val summary: RuleSetSnapshotSummary? = null,
-    val error: RuleSetValidationErrorResponse? = null,
-)

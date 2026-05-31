@@ -15,12 +15,12 @@ class RuleManagementCommandEventTest {
     @Test
     fun `create draft command carries user intent`() {
         val draftId = draftId()
-        val version = version(1)
+        val ruleSetVersion = version(1)
 
-        val command = CreateRuleSetDraft(draftId = draftId, version = version)
+        val command = CreateRuleSetDraft(draftId = draftId, ruleSetVersion = ruleSetVersion)
 
         assertEquals(draftId, command.draftId)
-        assertEquals(version, command.version)
+        assertEquals(ruleSetVersion, command.ruleSetVersion)
     }
 
     @Test

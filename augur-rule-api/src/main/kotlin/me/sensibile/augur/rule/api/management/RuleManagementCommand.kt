@@ -14,7 +14,7 @@ sealed interface RuleManagementCommand {
 
 data class CreateRuleSetDraft(
     override val draftId: RuleSetDraftId,
-    val version: RuleSetVersion,
+    val ruleSetVersion: RuleSetVersion,
 ) : RuleManagementCommand
 
 data class AddFlag(

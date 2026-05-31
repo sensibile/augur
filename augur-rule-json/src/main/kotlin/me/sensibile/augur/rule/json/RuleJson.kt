@@ -54,12 +54,6 @@ object RuleJson {
             Outcome.Err(RuleJsonError.InvalidJson(exception.message.orEmpty()))
         }
 
-    @Deprecated(
-        message = "Use decodeRuleSetSnapshot for evaluation-ready rule snapshots.",
-        replaceWith = ReplaceWith("decodeRuleSetSnapshot(value)"),
-    )
-    fun decodeValidRuleSet(value: String): Outcome<RuleJsonError, RuleSetSnapshot> = decodeRuleSetSnapshot(value)
-
     fun decodeRuleSetSnapshot(value: String): Outcome<RuleJsonError, RuleSetSnapshot> =
         decodeRuleSet(value).flatMap { ruleSet ->
             RuleSetValidator.validate(ruleSet).mapValidationError()

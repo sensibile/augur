@@ -16,7 +16,7 @@ sealed interface RuleManagementEvent {
 data class RuleSetDraftCreated(
     override val eventId: RuleManagementEventId,
     override val draftId: RuleSetDraftId,
-    val version: RuleSetVersion,
+    val ruleSetVersion: RuleSetVersion,
 ) : RuleManagementEvent
 
 data class FlagAdded(
