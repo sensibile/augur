@@ -20,6 +20,8 @@ The canonical rule storage format is documented in
 [docs/rule-json-format.md](docs/rule-json-format.md).
 Admin/API and snapshot boundaries are documented in
 [docs/adr/0002-admin-api-and-snapshot-boundaries.md](docs/adr/0002-admin-api-and-snapshot-boundaries.md).
+Rule management command/event boundaries are documented in
+[docs/adr/0003-rule-management-command-event-boundary.md](docs/adr/0003-rule-management-command-event-boundary.md).
 The initial Admin API contract is documented in
 [docs/admin-api.md](docs/admin-api.md).
 

@@ -107,6 +107,10 @@ SDK fetch/cache behavior belongs outside the core.
   on `augur-rule-sdk`.
 - Rule creation, editing, persistence, approval, and audit workflows belong in
   admin/API modules, not in the SDK.
+- Rule management commands and domain events belong in admin/API modules. Keep
+  them out of `augur-rule-core`, `RuleSetSnapshot`, and `augur-rule-sdk`.
+- Do not treat `RuleSetVersion` as an event stream version or database row
+  version. Add admin/API value objects for those concerns when needed.
 
 ## Domain Modeling
 
