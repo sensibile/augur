@@ -24,6 +24,21 @@ class RuleManagementDraftEventApplierTest {
     }
 
     @Test
+    fun `rejects draft created event when state already exists`() {
+        val state = draftState()
+        val event =
+            RuleSetDraftCreated(
+                eventId = eventId(),
+                draftId = state.draftId,
+                ruleSetVersion = version(1),
+            )
+
+        val actual = RuleManagementEventApplier.apply(state = state, event = event)
+
+        assertEquals(Outcome.Err(RuleManagementEventApplyError.DraftAlreadyExists(state.draftId)), actual)
+    }
+
+    @Test
     fun `applies draft validated event`() {
         val state = draftState()
         val event =
@@ -40,6 +55,30 @@ class RuleManagementDraftEventApplierTest {
             (actual as Outcome.Ok)
                 .value
                 .status,
+        )
+    }
+
+    @Test
+    fun `rejects event when draft id differs from state`() {
+        val state = draftState()
+        val actualDraftId = draftId("018ff7c1-9354-7b02-b021-76d2791d6a24")
+        val event =
+            RuleSetDraftValidated(
+                eventId = eventId(),
+                draftId = actualDraftId,
+                ruleSetVersion = state.ruleSetVersion,
+            )
+
+        val actual = RuleManagementEventApplier.apply(state = state, event = event)
+
+        assertEquals(
+            Outcome.Err(
+                RuleManagementEventApplyError.DraftIdMismatch(
+                    expected = state.draftId,
+                    actual = actualDraftId,
+                ),
+            ),
+            actual,
         )
     }
 }

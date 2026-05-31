@@ -45,6 +45,17 @@ class RuleManagementFlagEventApplierTest {
     }
 
     @Test
+    fun `rejects flag status event when flag does not exist`() {
+        val state = draftState()
+        val flagKey = flagKey("new_checkout")
+        val event = FlagEnabled(eventId = eventId(), draftId = state.draftId, flagKey = flagKey)
+
+        val actual = RuleManagementEventApplier.apply(state = state, event = event)
+
+        assertEquals(Outcome.Err(RuleManagementEventApplyError.FlagNotFound(state.draftId, flagKey)), actual)
+    }
+
+    @Test
     fun `rejects event without draft state`() {
         val event =
             FlagAdded(
