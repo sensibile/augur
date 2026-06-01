@@ -78,17 +78,12 @@ class RuleManagementLifecycleTest {
         command: RuleManagementCommand,
         eventId: RuleManagementEventId,
     ): AppliedCommand {
-        val event =
-            when (val handled = RuleManagementCommandHandler.handle(state = state, command = command, eventId = eventId)) {
-                is Outcome.Err -> error("Command failed: ${handled.error}")
-                is Outcome.Ok -> handled.value
+        val result =
+            when (val processed = RuleManagementCommandProcessor.process(state = state, command = command, eventId = eventId)) {
+                is Outcome.Err -> error("Command process failed: ${processed.error}")
+                is Outcome.Ok -> processed.value
             }
-        val nextState =
-            when (val applied = RuleManagementEventApplier.apply(state = state, event = event)) {
-                is Outcome.Err -> error("Event apply failed: ${applied.error}")
-                is Outcome.Ok -> applied.value
-            }
-        return AppliedCommand(event = event, state = nextState)
+        return AppliedCommand(event = result.event, state = result.state)
     }
 
     private data class AppliedCommand(
