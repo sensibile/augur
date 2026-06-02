@@ -88,6 +88,12 @@ internal fun version(value: Long): RuleSetVersion =
         is Outcome.Ok -> version.value
     }
 
+internal fun streamVersion(value: Long): RuleManagementStreamVersion =
+    when (val version = RuleManagementStreamVersion.of(value)) {
+        is Outcome.Err -> error("Invalid test stream version: ${version.error}")
+        is Outcome.Ok -> version.value
+    }
+
 internal fun flagKey(value: String): FlagKey =
     when (val key = FlagKey.of(value)) {
         is Outcome.Err -> error("Invalid test flag key: ${key.error}")
