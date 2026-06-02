@@ -9,7 +9,7 @@ class RuleManagementCommandServiceTest {
     @Test
     fun `loads empty stream processes command and appends event`() {
         val draftId = draftId()
-        val store = FakeRuleManagementEventStore(stream = emptyStream(draftId))
+        val store = FakeRuleManagementEventStore(stream = emptyEventStream(draftId))
         val service = RuleManagementCommandService(store)
         val command = CreateRuleSetDraft(draftId = draftId, ruleSetVersion = version(1))
 
@@ -102,7 +102,7 @@ class RuleManagementCommandServiceTest {
     @Test
     fun `returns process failure without appending event`() {
         val draftId = draftId()
-        val store = FakeRuleManagementEventStore(stream = emptyStream(draftId))
+        val store = FakeRuleManagementEventStore(stream = emptyEventStream(draftId))
         val service = RuleManagementCommandService(store)
         val command = AddFlag(draftId = draftId, flag = flag("new_checkout"))
 
@@ -130,7 +130,7 @@ class RuleManagementCommandServiceTest {
                 expected = RuleManagementExpectedStreamVersion.NoStream,
                 actual = streamVersion(1),
             )
-        val store = FakeRuleManagementEventStore(stream = emptyStream(draftId), appendResult = Outcome.Err(error))
+        val store = FakeRuleManagementEventStore(stream = emptyEventStream(draftId), appendResult = Outcome.Err(error))
         val service = RuleManagementCommandService(store)
         val command = CreateRuleSetDraft(draftId = draftId, ruleSetVersion = version(1))
 
@@ -138,40 +138,5 @@ class RuleManagementCommandServiceTest {
 
         assertEquals(Outcome.Err(RuleManagementCommandServiceError.EventStoreAppendFailed(error)), actual)
         assertIs<RuleSetDraftCreated>(store.appendedEvent)
-    }
-
-    private fun emptyStream(draftId: RuleSetDraftId): RuleManagementEventStream =
-        RuleManagementEventStream(
-            draftId = draftId,
-            version = null,
-            events = emptySequence(),
-        )
-
-    private class FakeRuleManagementEventStore(
-        stream: RuleManagementEventStream =
-            RuleManagementEventStream(
-                draftId = draftId(),
-                version = null,
-                events = emptySequence(),
-            ),
-        private val loadResult: Outcome<RuleManagementEventStoreError, RuleManagementEventStream> = Outcome.Ok(stream),
-        private val appendResult: Outcome<RuleManagementEventStoreError, RuleManagementStreamVersion>? = null,
-        private val nextVersion: RuleManagementStreamVersion = streamVersion(1),
-    ) : RuleManagementEventStore {
-        var appendedExpectedVersion: RuleManagementExpectedStreamVersion? = null
-            private set
-        var appendedEvent: RuleManagementEvent? = null
-            private set
-
-        override fun load(draftId: RuleSetDraftId): Outcome<RuleManagementEventStoreError, RuleManagementEventStream> = loadResult
-
-        override fun append(
-            expectedVersion: RuleManagementExpectedStreamVersion,
-            event: RuleManagementEvent,
-        ): Outcome<RuleManagementEventStoreError, RuleManagementStreamVersion> {
-            appendedExpectedVersion = expectedVersion
-            appendedEvent = event
-            return appendResult ?: Outcome.Ok(nextVersion)
-        }
     }
 }

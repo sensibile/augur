@@ -30,6 +30,13 @@ internal fun draftState(
         status = status,
     )
 
+internal fun emptyEventStream(draftId: RuleSetDraftId = draftId()): RuleManagementEventStream =
+    RuleManagementEventStream(
+        draftId = draftId,
+        version = null,
+        events = emptySequence(),
+    )
+
 internal fun flag(
     key: String,
     enabled: Boolean = true,
@@ -111,3 +118,26 @@ internal fun ruleId(value: String = TEST_RULE_ID): RuleId =
         is Outcome.Err -> error("Invalid test rule id: ${ruleId.error}")
         is Outcome.Ok -> ruleId.value
     }
+
+internal class FakeRuleManagementEventStore(
+    stream: RuleManagementEventStream = emptyEventStream(),
+    private val loadResult: Outcome<RuleManagementEventStoreError, RuleManagementEventStream> = Outcome.Ok(stream),
+    private val appendResult: Outcome<RuleManagementEventStoreError, RuleManagementStreamVersion>? = null,
+    private val nextVersion: RuleManagementStreamVersion = streamVersion(1),
+) : RuleManagementEventStore {
+    var appendedExpectedVersion: RuleManagementExpectedStreamVersion? = null
+        private set
+    var appendedEvent: RuleManagementEvent? = null
+        private set
+
+    override fun load(draftId: RuleSetDraftId): Outcome<RuleManagementEventStoreError, RuleManagementEventStream> = loadResult
+
+    override fun append(
+        expectedVersion: RuleManagementExpectedStreamVersion,
+        event: RuleManagementEvent,
+    ): Outcome<RuleManagementEventStoreError, RuleManagementStreamVersion> {
+        appendedExpectedVersion = expectedVersion
+        appendedEvent = event
+        return appendResult ?: Outcome.Ok(nextVersion)
+    }
+}
