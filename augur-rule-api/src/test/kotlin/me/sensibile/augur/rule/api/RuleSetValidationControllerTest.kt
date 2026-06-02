@@ -3,7 +3,7 @@ package me.sensibile.augur.rule.api
 import org.springframework.http.HttpStatus
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
+import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 class RuleSetValidationControllerTest {
@@ -22,11 +22,14 @@ class RuleSetValidationControllerTest {
     fun `returns unprocessable entity for invalid validation result`() {
         val controller = RuleSetValidationController(AlwaysInvalidRuleSetValidationService())
 
-        val response = controller.validate("{}")
+        val exception =
+            assertFailsWith<RuleSetValidationException> {
+                controller.validate("{}")
+            }
 
-        assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, response.statusCode)
-        assertFalse(response.body!!.valid)
-        assertEquals("invalid_json", response.body!!.error!!.code)
+        assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, exception.statusCode)
+        assertEquals("invalid_json", exception.code)
+        assertEquals("invalid", exception.body.detail)
     }
 }
 

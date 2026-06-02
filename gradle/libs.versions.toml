@@ -2,6 +2,7 @@
 kotlin = "2.3.20"
 kotlinx-serialization-json = "1.9.0"
 kover = "0.9.8"
+kopring-bricks = "0.0.1-SNAPSHOT"
 spring-boot = "4.0.6"
 
 [libraries]
@@ -15,6 +16,8 @@ spring-boot-starter-webmvc = { module = "org.springframework.boot:spring-boot-st
 spring-boot-starter-webmvc-test = { module = "org.springframework.boot:spring-boot-starter-webmvc-test" }
 spring-boot-test = { module = "org.springframework.boot:spring-boot-test" }
 spring-boot-test-autoconfigure = { module = "org.springframework.boot:spring-boot-test-autoconfigure" }
+
+kopring-bricks-webmvc-error-starter = { module = "me.sensibile:webmvc-error-starter", version.ref = "kopring-bricks" }
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }

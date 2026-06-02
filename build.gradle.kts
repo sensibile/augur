@@ -16,7 +16,15 @@ subprojects {
     description = rootProject.description
 
     repositories {
+        mavenLocal()
         mavenCentral()
+        maven {
+            url = uri("https://maven.pkg.github.com/sensibile/kopring-bricks")
+            credentials {
+                username = providers.gradleProperty("gpr.user").orNull ?: System.getenv("GITHUB_ACTOR")
+                password = providers.gradleProperty("gpr.key").orNull ?: System.getenv("GITHUB_TOKEN")
+            }
+        }
     }
 
     plugins.withId("java") {

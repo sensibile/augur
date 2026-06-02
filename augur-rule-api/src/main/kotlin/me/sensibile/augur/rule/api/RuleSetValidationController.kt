@@ -1,5 +1,6 @@
 package me.sensibile.augur.rule.api
 
+import me.sensibile.kopringbricks.web.problem.autoconfigure.ApiException
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.PostMapping
@@ -27,14 +28,22 @@ class RuleSetValidationController(
             }
 
             is RuleSetValidationResult.Invalid -> {
-                ResponseEntity
-                    .status(HttpStatus.UNPROCESSABLE_ENTITY)
-                    .body(
-                        RuleSetValidationResponse(
-                            valid = false,
-                            error = result.error,
-                        ),
-                    )
+                throw RuleSetValidationException(result.error)
             }
         }
 }
+
+class RuleSetValidationException(
+    error: RuleSetValidationErrorResponse,
+) : ApiException(
+        status = HttpStatus.UNPROCESSABLE_ENTITY,
+        code = error.code,
+        detail = error.message,
+        title = "Rule set validation failed",
+        properties =
+            if (error.violations.isEmpty()) {
+                emptyMap()
+            } else {
+                mapOf("violations" to error.violations)
+            },
+    )

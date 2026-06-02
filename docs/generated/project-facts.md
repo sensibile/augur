@@ -47,8 +47,8 @@ Use it as factual source material when updating human-authored documentation.
 - `implementation(project(":augur-rule-core"))`
 - `implementation(project(":augur-rule-json"))`
 - `implementation(platform(libs.spring.boot.dependencies))`
+- `implementation(libs.kopring.bricks.webmvc.error.starter)`
 - `implementation(libs.kotlin.reflect)`
-- `implementation(libs.spring.boot.starter.webmvc)`
 - `testImplementation(libs.kotlin.test.junit5)`
 - `testImplementation(libs.spring.boot.starter.webmvc.test)`
 - `testImplementation(libs.spring.boot.test)`
@@ -153,6 +153,7 @@ Use it as factual source material when updating human-authored documentation.
 - `data class RuleSetValidationErrorResponse` (augur-rule-api/src/main/kotlin/me/sensibile/augur/rule/api/RuleSetValidationContract.kt)
 - `data class RuleSetViolationResponse` (augur-rule-api/src/main/kotlin/me/sensibile/augur/rule/api/RuleSetValidationContract.kt)
 - `class RuleSetValidationController` (augur-rule-api/src/main/kotlin/me/sensibile/augur/rule/api/RuleSetValidationController.kt)
+- `class RuleSetValidationException` (augur-rule-api/src/main/kotlin/me/sensibile/augur/rule/api/RuleSetValidationController.kt)
 - `class RuleSetValidationService` (augur-rule-api/src/main/kotlin/me/sensibile/augur/rule/api/RuleSetValidationService.kt)
 - `sealed interface RuleManagementCommand` (augur-rule-api/src/main/kotlin/me/sensibile/augur/rule/api/management/RuleManagementCommand.kt)
 - `data class CreateRuleSetDraft` (augur-rule-api/src/main/kotlin/me/sensibile/augur/rule/api/management/RuleManagementCommand.kt)

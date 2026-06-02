@@ -10,8 +10,8 @@ dependencies {
     implementation(project(":augur-rule-json"))
 
     implementation(platform(libs.spring.boot.dependencies))
+    implementation(libs.kopring.bricks.webmvc.error.starter)
     implementation(libs.kotlin.reflect)
-    implementation(libs.spring.boot.starter.webmvc)
 
     testImplementation(libs.kotlin.test.junit5)
     testImplementation(libs.spring.boot.starter.webmvc.test)

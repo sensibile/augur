@@ -2,9 +2,9 @@
 
 `augur-rule-api` is the Spring shell for rule authoring and validation.
 
-The first API surface is intentionally small. It accepts canonical rule JSON,
-validates whether it can become a `RuleSetSnapshot`, and returns a compact
-result. It does not publish, persist, cache, or evaluate rules.
+The first API surface is intentionally small. It accepts canonical rule JSON and
+validates whether it can become a `RuleSetSnapshot`. It does not publish,
+persist, cache, or evaluate rules.
 
 ## Validate Rule Set
 
@@ -30,28 +30,31 @@ Successful validation returns `200 OK`.
 }
 ```
 
-Invalid draft JSON returns `422 Unprocessable Entity`.
+Invalid draft JSON returns `422 Unprocessable Entity` as a Spring
+`ProblemDetail` response through `kopring-bricks` Web MVC error handling.
 
 ```json
 {
-  "valid": false,
-  "summary": null,
-  "error": {
-    "code": "invalid_rule_set",
-    "message": "Rule set validation failed.",
-    "violations": [
-      {
-        "code": "serve_type_mismatch",
-        "message": "Rule 018ff7c1-9354-7b02-b021-76d2791d6a21 for flag new_checkout serves String but default value is Boolean."
-      }
-    ]
-  }
+  "type": "about:blank",
+  "title": "Rule set validation failed",
+  "status": 422,
+  "detail": "Rule set validation failed.",
+  "instance": "/rule-sets/validate",
+  "code": "invalid_rule_set",
+  "violations": [
+    {
+      "code": "serve_type_mismatch",
+      "message": "Rule 018ff7c1-9354-7b02-b021-76d2791d6a21 for flag new_checkout serves String but default value is Boolean."
+    }
+  ]
 }
 ```
 
 ## Boundary
 
 - API modules may depend on `augur-rule-core` and `augur-rule-json`.
+- Spring API error handling should use `kopring-bricks` starters rather than
+  local global exception plumbing.
 - API modules must not depend on `augur-rule-sdk`.
 - SDK modules must not depend on this API module.
 - Persistence, publishing, approval, and audit APIs will be added outside the
