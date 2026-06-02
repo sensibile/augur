@@ -16,6 +16,7 @@ Use it as factual source material when updating human-authored documentation.
 - Tidy First is preferred for behavior-preserving structural improvements.
 - Ktlint owns formatting; detekt should avoid duplicate formatting checks.
 - Architecture checks can be added with ArchUnit once service, SDK, and adapter modules exist.
+- Spring implementation should actively reuse existing `kopring-bricks` starters around infrastructure edges.
 
 ## Modules
 

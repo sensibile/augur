@@ -105,6 +105,12 @@ persistence concerns into runtime evaluation.
 Admin/API work can evolve independently from SDK evaluation as long as it
 publishes valid `RuleSetSnapshot` data.
 
+Spring implementation in admin/API modules should reuse `kopring-bricks`
+starters for reusable infrastructure concerns such as API errors,
+concurrency-control headers, audit logs, outbox publication, and event-store
+infrastructure. Augur should keep rule-specific domain behavior local and avoid
+duplicating generic Spring plumbing.
+
 The project should keep enforcing these boundaries with
 `mise run architecture:check`. If shell checks become too limited, introduce
 ArchUnit or a similar architecture test suite.

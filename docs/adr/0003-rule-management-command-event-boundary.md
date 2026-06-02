@@ -137,6 +137,13 @@ clear command/event names for audit and integration.
 If event sourcing becomes necessary later, the event names and aggregate
 boundaries can be reused instead of rediscovered from CRUD handlers.
 
+When the Spring admin/API shell persists, audits, publishes, or exposes these
+events over HTTP, it should use existing `kopring-bricks` starters around the
+edges: event sourcing for append/load infrastructure, audit log for
+operator-visible change records, outbox for durable rule-change publication,
+concurrency control for stale update protection, and Web MVC error handling for
+ProblemDetail responses.
+
 Authorization systems can follow the same pattern in their own domain while
 using Augur rule snapshots as execution artifacts.
 

@@ -112,6 +112,34 @@ SDK fetch/cache behavior belongs outside the core.
 - Do not treat `RuleSetVersion` as an event stream version or database row
   version. Add admin/API value objects for those concerns when needed.
 
+## Kopring Bricks Integration
+
+`kopring-bricks` is not only a setup/style reference. Spring implementation
+work should actively consume existing `kopring-bricks` starters before adding
+local Spring plumbing.
+
+- Read `/Users/tonton/Documents/workspace/bricks/kopring-bricks/README.md` and
+  `docs/application-agent-guide.md` before adding or changing Spring API,
+  persistence, event publication, audit, cache, concurrency, resilience,
+  observability, or HTTP client code.
+- Prefer application-facing starter artifacts such as `webmvc-error-starter`,
+  `concurrency-control-starter`, `event-sourcing-starter`,
+  `audit-log-starter`, and `outbox-starter` over depending on internal
+  autoconfigure modules directly.
+- Keep Augur-specific rule schemas, command handlers, domain events, snapshots,
+  and evaluation logic in Augur. Use bricks around the Spring/infrastructure
+  edges.
+- Use `webmvc-error-starter` and `problem-details` primitives for Spring error
+  responses instead of creating ad hoc global exception handling.
+- Use `concurrency-control-starter` for admin APIs that update versioned rule
+  resources with ETags or `If-Match`.
+- Use `event-sourcing-starter` only for storage/replay infrastructure. Keep
+  Augur rule-management command/event types app-owned.
+- Use `audit-log-starter` for operator-visible rule changes and
+  `outbox-starter` for durable rule-change publication.
+- If a needed Spring capability is missing or incompatible, create/request the
+  change in `kopring-bricks` instead of growing a private Augur workaround.
+
 ## Domain Modeling
 
 - Use value objects aggressively at domain boundaries.
