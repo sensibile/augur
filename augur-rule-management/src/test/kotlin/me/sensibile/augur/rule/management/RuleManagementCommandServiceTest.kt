@@ -57,6 +57,51 @@ class RuleManagementCommandServiceTest {
     }
 
     @Test
+    fun `rejects command when required stream version does not match loaded stream`() {
+        val draftId = draftId()
+        val store =
+            FakeRuleManagementEventStore(
+                stream =
+                    RuleManagementEventStream(
+                        draftId = draftId,
+                        version = streamVersion(2),
+                        events =
+                            sequenceOf(
+                                RuleSetDraftCreated(
+                                    eventId = eventId("018ff7c1-9354-7b02-b021-76d2791d6a22"),
+                                    draftId = draftId,
+                                    ruleSetVersion = version(1),
+                                ),
+                            ),
+                    ),
+            )
+        val service = RuleManagementCommandService(store)
+        val expectedVersion = RuleManagementExpectedStreamVersion.Exact(streamVersion(1))
+        val command = AddFlag(draftId = draftId, flag = flag("new_checkout"))
+
+        val actual =
+            service.handle(
+                command = command,
+                eventId = eventId("018ff7c1-9354-7b02-b021-76d2791d6a26"),
+                expectedVersion = expectedVersion,
+            )
+
+        assertEquals(
+            Outcome.Err(
+                RuleManagementCommandServiceError.EventStoreAppendFailed(
+                    RuleManagementEventStoreError.StreamVersionConflict(
+                        draftId = draftId,
+                        expected = expectedVersion,
+                        actual = streamVersion(2),
+                    ),
+                ),
+            ),
+            actual,
+        )
+        assertEquals(null, store.appendedEvent)
+    }
+
+    @Test
     fun `returns load failure without appending event`() {
         val draftId = draftId()
         val error = RuleManagementEventStoreError.StorageFailure("load failed")

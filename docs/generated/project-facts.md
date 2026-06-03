@@ -54,6 +54,7 @@ Use it as factual source material when updating human-authored documentation.
 - `implementation(project(":augur-rule-json"))`
 - `implementation(project(":augur-rule-management"))`
 - `implementation(platform(libs.spring.boot.dependencies))`
+- `implementation(libs.kopring.bricks.concurrency.control.starter)`
 - `implementation(libs.kopring.bricks.webmvc.error.starter)`
 - `implementation(libs.kotlin.reflect)`
 - `testImplementation(libs.kotlin.test.junit5)`

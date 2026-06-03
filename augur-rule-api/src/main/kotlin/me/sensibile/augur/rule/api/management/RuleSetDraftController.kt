@@ -17,17 +17,22 @@ import me.sensibile.augur.rule.management.RuleManagementEvent
 import me.sensibile.augur.rule.management.RuleManagementEventIdGenerator
 import me.sensibile.augur.rule.management.RuleManagementEventReplayer
 import me.sensibile.augur.rule.management.RuleManagementEventStore
+import me.sensibile.augur.rule.management.RuleManagementExpectedStreamVersion
 import me.sensibile.augur.rule.management.RuleManagementStreamVersion
 import me.sensibile.augur.rule.management.RuleSetDraftId
 import me.sensibile.augur.rule.management.RuleSetDraftIdGenerator
 import me.sensibile.augur.rule.management.RuleSetDraftState
 import me.sensibile.augur.rule.management.ValidateRuleSetDraft
+import me.sensibile.kopringbricks.web.concurrency.autoconfigure.ETagGenerator
+import me.sensibile.kopringbricks.web.concurrency.autoconfigure.IfMatchValidator
+import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestHeader
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import kotlin.uuid.Uuid
@@ -39,6 +44,8 @@ class RuleSetDraftController(
     private val eventIds: RuleManagementEventIdGenerator,
     private val commandService: RuleManagementCommandService,
     private val eventStore: RuleManagementEventStore,
+    private val etags: ETagGenerator,
+    private val ifMatchValidator: IfMatchValidator,
 ) {
     @PostMapping(consumes = ["application/json"], produces = ["application/json"])
     fun create(
@@ -47,30 +54,34 @@ class RuleSetDraftController(
         val draftId = draftIds.nextRuleSetDraftId()
         val version = request.version.toRuleSetVersion()
         val result = handle(CreateRuleSetDraft(draftId = draftId, ruleSetVersion = version))
-        return ResponseEntity.status(HttpStatus.CREATED).body(result)
+        return ResponseEntity.status(HttpStatus.CREATED).eTag(eTag(result.draft)).body(result)
     }
 
     @GetMapping("/{draftId}", produces = ["application/json"])
     fun get(
         @PathVariable draftId: String,
-    ): RuleSetDraftResponse {
+    ): ResponseEntity<RuleSetDraftResponse> {
         val parsedDraftId = draftId.toDraftId()
         val loaded = loadDraft(parsedDraftId)
-        return loaded.state.toResponse(loaded.streamVersion)
+        val response = loaded.state.toResponse(loaded.streamVersion)
+        return ResponseEntity.ok().eTag(eTag(response)).body(response)
     }
 
     @PostMapping("/{draftId}/flags", consumes = ["application/json"], produces = ["application/json"])
     fun addFlag(
         @PathVariable draftId: String,
         @RequestBody body: String,
-    ): RuleSetDraftCommandResponse {
+        @RequestHeader(name = HttpHeaders.IF_MATCH, required = false) ifMatch: String?,
+    ): ResponseEntity<RuleSetDraftCommandResponse> {
         val parsedDraftId = draftId.toDraftId()
+        val expectedVersion = requireCurrentVersion(ifMatch, parsedDraftId)
         val flag =
             when (val decoded = RuleJson.decodeFlag(body)) {
                 is Outcome.Err -> throw RuleJsonException(decoded.error.toValidationError())
                 is Outcome.Ok -> decoded.value
             }
-        return handle(AddFlag(draftId = parsedDraftId, flag = flag))
+        val response = handle(AddFlag(draftId = parsedDraftId, flag = flag), expectedVersion)
+        return ResponseEntity.ok().eTag(eTag(response.draft)).body(response)
     }
 
     @PostMapping("/{draftId}/flags/{flagKey}/rules", consumes = ["application/json"], produces = ["application/json"])
@@ -78,24 +89,47 @@ class RuleSetDraftController(
         @PathVariable draftId: String,
         @PathVariable flagKey: String,
         @RequestBody body: String,
-    ): RuleSetDraftCommandResponse {
+        @RequestHeader(name = HttpHeaders.IF_MATCH, required = false) ifMatch: String?,
+    ): ResponseEntity<RuleSetDraftCommandResponse> {
         val parsedDraftId = draftId.toDraftId()
+        val expectedVersion = requireCurrentVersion(ifMatch, parsedDraftId)
         val parsedFlagKey = flagKey.toFlagKey()
         val rule =
             when (val decoded = RuleJson.decodeRule(body)) {
                 is Outcome.Err -> throw RuleJsonException(decoded.error.toValidationError())
                 is Outcome.Ok -> decoded.value
             }
-        return handle(AddRule(draftId = parsedDraftId, flagKey = parsedFlagKey, rule = rule))
+        val response = handle(AddRule(draftId = parsedDraftId, flagKey = parsedFlagKey, rule = rule), expectedVersion)
+        return ResponseEntity.ok().eTag(eTag(response.draft)).body(response)
     }
 
     @PostMapping("/{draftId}/validate", produces = ["application/json"])
     fun validate(
         @PathVariable draftId: String,
-    ): RuleSetDraftCommandResponse = handle(ValidateRuleSetDraft(draftId = draftId.toDraftId()))
+        @RequestHeader(name = HttpHeaders.IF_MATCH, required = false) ifMatch: String?,
+    ): ResponseEntity<RuleSetDraftCommandResponse> {
+        val parsedDraftId = draftId.toDraftId()
+        val expectedVersion = requireCurrentVersion(ifMatch, parsedDraftId)
+        val response = handle(ValidateRuleSetDraft(draftId = parsedDraftId), expectedVersion)
+        return ResponseEntity.ok().eTag(eTag(response.draft)).body(response)
+    }
 
-    private fun handle(command: RuleManagementCommand): RuleSetDraftCommandResponse =
-        when (val handled = commandService.handle(command = command, eventId = eventIds.nextRuleManagementEventId())) {
+    private fun handle(
+        command: RuleManagementCommand,
+        expectedVersion: RuleManagementExpectedStreamVersion? = null,
+    ): RuleSetDraftCommandResponse =
+        when (
+            val handled =
+                if (expectedVersion == null) {
+                    commandService.handle(command = command, eventId = eventIds.nextRuleManagementEventId())
+                } else {
+                    commandService.handle(
+                        command = command,
+                        eventId = eventIds.nextRuleManagementEventId(),
+                        expectedVersion = expectedVersion,
+                    )
+                }
+        ) {
             is Outcome.Err -> {
                 throw handled.error.toApiException()
             }
@@ -114,6 +148,21 @@ class RuleSetDraftController(
 
         return LoadedDraft(state = state, streamVersion = stream.version)
     }
+
+    private fun requireCurrentVersion(
+        ifMatch: String?,
+        draftId: RuleSetDraftId,
+    ): RuleManagementExpectedStreamVersion {
+        val loaded = loadDraft(draftId)
+        ifMatchValidator.requireMatch(ifMatch, loaded.requiredStreamVersion.value)
+        return RuleManagementExpectedStreamVersion.Exact(loaded.requiredStreamVersion)
+    }
+
+    private fun eTag(response: RuleSetDraftResponse): String =
+        when (val version = response.streamVersion) {
+            null -> error("Rule set draft response must have a stream version.")
+            else -> etags.generate(version)
+        }
 
     private fun RuleSetDraftId.loadStream() =
         when (val loaded = eventStore.load(this)) {
@@ -151,6 +200,9 @@ private fun RuleSetDraftState.toResponse(streamVersion: RuleManagementStreamVers
         flagCount = flags.size,
         streamVersion = streamVersion?.value,
     )
+
+private val LoadedDraft.requiredStreamVersion: RuleManagementStreamVersion
+    get() = streamVersion ?: error("Loaded draft must have a stream version.")
 
 private val RuleManagementEvent.eventType: String
     get() = this::class.simpleName.orEmpty()

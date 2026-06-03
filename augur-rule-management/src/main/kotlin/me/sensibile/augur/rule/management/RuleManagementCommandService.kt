@@ -9,12 +9,37 @@ class RuleManagementCommandService(
         command: RuleManagementCommand,
         eventId: RuleManagementEventId,
     ): Outcome<RuleManagementCommandServiceError, RuleManagementStoredCommandResult> =
+        handleOptionalExpectedVersion(command = command, eventId = eventId, expectedVersion = null)
+
+    fun handle(
+        command: RuleManagementCommand,
+        eventId: RuleManagementEventId,
+        expectedVersion: RuleManagementExpectedStreamVersion,
+    ): Outcome<RuleManagementCommandServiceError, RuleManagementStoredCommandResult> =
+        handleOptionalExpectedVersion(command = command, eventId = eventId, expectedVersion = expectedVersion)
+
+    private fun handleOptionalExpectedVersion(
+        command: RuleManagementCommand,
+        eventId: RuleManagementEventId,
+        expectedVersion: RuleManagementExpectedStreamVersion?,
+    ): Outcome<RuleManagementCommandServiceError, RuleManagementStoredCommandResult> =
         when (val loaded = eventStore.load(command.draftId)) {
             is Outcome.Err -> {
                 Outcome.Err(RuleManagementCommandServiceError.EventStoreLoadFailed(loaded.error))
             }
 
             is Outcome.Ok -> {
+                if (expectedVersion != null && !expectedVersion.matches(loaded.value.version)) {
+                    return Outcome.Err(
+                        RuleManagementCommandServiceError.EventStoreAppendFailed(
+                            RuleManagementEventStoreError.StreamVersionConflict(
+                                draftId = command.draftId,
+                                expected = expectedVersion,
+                                actual = loaded.value.version,
+                            ),
+                        ),
+                    )
+                }
                 handleLoadedStream(command = command, eventId = eventId, stream = loaded.value)
             }
         }
@@ -75,6 +100,12 @@ class RuleManagementCommandService(
             RuleManagementExpectedStreamVersion.NoStream
         } else {
             RuleManagementExpectedStreamVersion.Exact(this)
+        }
+
+    private fun RuleManagementExpectedStreamVersion.matches(actual: RuleManagementStreamVersion?): Boolean =
+        when (this) {
+            RuleManagementExpectedStreamVersion.NoStream -> actual == null
+            is RuleManagementExpectedStreamVersion.Exact -> version == actual
         }
 }
 

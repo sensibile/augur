@@ -3,8 +3,11 @@ package me.sensibile.augur.rule.api.management
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
+import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.MockMvc
+import org.springframework.test.web.servlet.MvcResult
+import org.springframework.test.web.servlet.ResultActionsDsl
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.post
 import kotlin.test.Test
@@ -18,55 +21,29 @@ class RuleSetDraftHttpTest {
 
     @Test
     fun `creates edits validates and reads a rule set draft over http`() {
-        val created =
-            mockMvc
-                .post("/rule-set-drafts") {
-                    contentType = MediaType.APPLICATION_JSON
-                    accept = MediaType.APPLICATION_JSON
-                    content = """{"version":1}"""
-                }.andExpect {
-                    status { isCreated() }
-                    jsonPath("$.eventType") { value("RuleSetDraftCreated") }
-                    jsonPath("$.draft.ruleSetVersion") { value(1) }
-                    jsonPath("$.draft.status") { value("Draft") }
-                    jsonPath("$.draft.flagCount") { value(0) }
-                    jsonPath("$.draft.streamVersion") { value(1) }
-                }.andReturn()
-
+        val created = createDraft()
         val draftId = requireJsonString(created.response.contentAsString, "draftId")
-
-        mockMvc
-            .post("/rule-set-drafts/$draftId/flags") {
-                contentType = MediaType.APPLICATION_JSON
-                accept = MediaType.APPLICATION_JSON
-                content = flagJson()
-            }.andExpect {
-                status { isOk() }
-                jsonPath("$.eventType") { value("FlagAdded") }
-                jsonPath("$.draft.flagCount") { value(1) }
-                jsonPath("$.draft.streamVersion") { value(2) }
-            }
-
-        mockMvc
-            .post("/rule-set-drafts/$draftId/flags/new_checkout/rules") {
-                contentType = MediaType.APPLICATION_JSON
-                accept = MediaType.APPLICATION_JSON
-                content = ruleJson()
-            }.andExpect {
-                status { isOk() }
-                jsonPath("$.eventType") { value("RuleAdded") }
-                jsonPath("$.draft.flagCount") { value(1) }
-                jsonPath("$.draft.streamVersion") { value(3) }
-            }
+        val flagAdded = addFlag(draftId, requireHeader(created, HttpHeaders.ETAG))
+        val ruleAdded =
+            postRule(draftId, requireHeader(flagAdded, HttpHeaders.ETAG), RULE_JSON)
+                .andExpect {
+                    status { isOk() }
+                    jsonPath("$.eventType") { value("RuleAdded") }
+                    jsonPath("$.draft.flagCount") { value(1) }
+                    jsonPath("$.draft.streamVersion") { value(3) }
+                    header { string(HttpHeaders.ETAG, "\"3\"") }
+                }.andReturn()
 
         mockMvc
             .post("/rule-set-drafts/$draftId/validate") {
                 accept = MediaType.APPLICATION_JSON
+                header(HttpHeaders.IF_MATCH, requireHeader(ruleAdded, HttpHeaders.ETAG))
             }.andExpect {
                 status { isOk() }
                 jsonPath("$.eventType") { value("RuleSetDraftValidated") }
                 jsonPath("$.draft.status") { value("Validated") }
                 jsonPath("$.draft.streamVersion") { value(4) }
+                header { string(HttpHeaders.ETAG, "\"4\"") }
             }
 
         mockMvc
@@ -78,6 +55,7 @@ class RuleSetDraftHttpTest {
                 jsonPath("$.status") { value("Validated") }
                 jsonPath("$.flagCount") { value(1) }
                 jsonPath("$.streamVersion") { value(4) }
+                header { string(HttpHeaders.ETAG, "\"4\"") }
             }
     }
 
@@ -94,19 +72,15 @@ class RuleSetDraftHttpTest {
 
     @Test
     fun `returns unprocessable entity for invalid flag json`() {
-        val created =
-            mockMvc
-                .post("/rule-set-drafts") {
-                    contentType = MediaType.APPLICATION_JSON
-                    accept = MediaType.APPLICATION_JSON
-                    content = """{"version":1}"""
-                }.andReturn()
+        val created = createDraft()
         val draftId = requireJsonString(created.response.contentAsString, "draftId")
+        val createdETag = requireHeader(created, HttpHeaders.ETAG)
 
         mockMvc
             .post("/rule-set-drafts/$draftId/flags") {
                 contentType = MediaType.APPLICATION_JSON
                 accept = MediaType.APPLICATION_JSON
+                header(HttpHeaders.IF_MATCH, createdETag)
                 content = """{"key": ""}"""
             }.andExpect {
                 status { isUnprocessableContent() }
@@ -117,34 +91,99 @@ class RuleSetDraftHttpTest {
 
     @Test
     fun `returns unprocessable entity when rule serve type does not match flag default value`() {
-        val created =
-            mockMvc
-                .post("/rule-set-drafts") {
-                    contentType = MediaType.APPLICATION_JSON
-                    accept = MediaType.APPLICATION_JSON
-                    content = """{"version":1}"""
-                }.andReturn()
+        val created = createDraft()
+        val draftId = requireJsonString(created.response.contentAsString, "draftId")
+        val createdETag = requireHeader(created, HttpHeaders.ETAG)
+
+        val flagAdded = addFlag(draftId, createdETag)
+
+        postRule(draftId, requireHeader(flagAdded, HttpHeaders.ETAG), STRING_SERVE_RULE_JSON)
+            .andExpect {
+                status { isUnprocessableContent() }
+                jsonPath("$.code") { value("serve_type_mismatch") }
+            }
+    }
+
+    @Test
+    fun `requires if-match for draft changes`() {
+        val created = createDraft()
         val draftId = requireJsonString(created.response.contentAsString, "draftId")
 
         mockMvc
             .post("/rule-set-drafts/$draftId/flags") {
                 contentType = MediaType.APPLICATION_JSON
                 accept = MediaType.APPLICATION_JSON
-                content = flagJson()
+                content = FLAG_JSON
+            }.andExpect {
+                status { isPreconditionRequired() }
+                jsonPath("$.code") { value("PRECONDITION_REQUIRED") }
+            }
+    }
+
+    @Test
+    fun `rejects stale if-match for draft changes`() {
+        val created = createDraft()
+        val draftId = requireJsonString(created.response.contentAsString, "draftId")
+
+        mockMvc
+            .post("/rule-set-drafts/$draftId/flags") {
+                contentType = MediaType.APPLICATION_JSON
+                accept = MediaType.APPLICATION_JSON
+                header(HttpHeaders.IF_MATCH, "\"99\"")
+                content = FLAG_JSON
+            }.andExpect {
+                status { isPreconditionFailed() }
+                jsonPath("$.code") { value("PRECONDITION_FAILED") }
+                jsonPath("$.currentETag") { value("\"1\"") }
+            }
+    }
+
+    private fun createDraft(): MvcResult =
+        mockMvc
+            .post("/rule-set-drafts") {
+                contentType = MediaType.APPLICATION_JSON
+                accept = MediaType.APPLICATION_JSON
+                content = """{"version":1}"""
+            }.andExpect {
+                status { isCreated() }
+                jsonPath("$.eventType") { value("RuleSetDraftCreated") }
+                jsonPath("$.draft.ruleSetVersion") { value(1) }
+                jsonPath("$.draft.status") { value("Draft") }
+                jsonPath("$.draft.flagCount") { value(0) }
+                jsonPath("$.draft.streamVersion") { value(1) }
+                header { string(HttpHeaders.ETAG, "\"1\"") }
+            }.andReturn()
+
+    private fun addFlag(
+        draftId: String,
+        ifMatch: String,
+    ): MvcResult =
+        mockMvc
+            .post("/rule-set-drafts/$draftId/flags") {
+                contentType = MediaType.APPLICATION_JSON
+                accept = MediaType.APPLICATION_JSON
+                header(HttpHeaders.IF_MATCH, ifMatch)
+                content = FLAG_JSON
             }.andExpect {
                 status { isOk() }
-            }
+                jsonPath("$.eventType") { value("FlagAdded") }
+                jsonPath("$.draft.flagCount") { value(1) }
+                jsonPath("$.draft.streamVersion") { value(2) }
+                header { string(HttpHeaders.ETAG, "\"2\"") }
+            }.andReturn()
 
+    private fun postRule(
+        draftId: String,
+        ifMatch: String,
+        body: String,
+    ): ResultActionsDsl =
         mockMvc
             .post("/rule-set-drafts/$draftId/flags/new_checkout/rules") {
                 contentType = MediaType.APPLICATION_JSON
                 accept = MediaType.APPLICATION_JSON
-                content = stringServeRuleJson()
-            }.andExpect {
-                status { isUnprocessableContent() }
-                jsonPath("$.code") { value("serve_type_mismatch") }
+                header(HttpHeaders.IF_MATCH, ifMatch)
+                content = body
             }
-    }
 }
 
 private fun requireJsonString(
@@ -156,7 +195,16 @@ private fun requireJsonString(
     return match.groupValues[1]
 }
 
-private fun flagJson(): String =
+private fun requireHeader(
+    result: MvcResult,
+    header: String,
+): String {
+    val value = result.response.getHeader(header)
+    assertNotNull(value, "Missing header $header")
+    return value
+}
+
+private val FLAG_JSON: String =
     """
     {
       "key": "new_checkout",
@@ -166,7 +214,7 @@ private fun flagJson(): String =
     }
     """.trimIndent()
 
-private fun ruleJson(): String =
+private val RULE_JSON: String =
     """
     {
       "id": "018ff7c1-9354-7b02-b021-76d2791d6a21",
@@ -180,7 +228,7 @@ private fun ruleJson(): String =
     }
     """.trimIndent()
 
-private fun stringServeRuleJson(): String =
+private val STRING_SERVE_RULE_JSON: String =
     """
     {
       "id": "018ff7c1-9354-7b02-b021-76d2791d6a22",

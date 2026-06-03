@@ -85,6 +85,10 @@ Accept: application/json
 
 Successful creation returns `201 Created`.
 
+```http
+ETag: "1"
+```
+
 ```json
 {
   "eventType": "RuleSetDraftCreated",
@@ -103,35 +107,49 @@ GET /rule-set-drafts/{draftId}
 Accept: application/json
 ```
 
-Returns the current replayed draft state, or `404 Not Found` with
-`code=draft_not_found`.
+Returns the current replayed draft state with an `ETag` generated from the
+current draft `streamVersion`, or `404 Not Found` with `code=draft_not_found`.
+
+```http
+ETag: "4"
+```
 
 ```http
 POST /rule-set-drafts/{draftId}/flags
 Content-Type: application/json
 Accept: application/json
+If-Match: "1"
 ```
 
 The request body is a canonical flag JSON object from
-[rule-json-format.md](rule-json-format.md).
+[rule-json-format.md](rule-json-format.md). Successful changes return the next
+draft `streamVersion` as the response `ETag`.
 
 ```http
 POST /rule-set-drafts/{draftId}/flags/{flagKey}/rules
 Content-Type: application/json
 Accept: application/json
+If-Match: "2"
 ```
 
 The request body is a canonical rule JSON object from
-[rule-json-format.md](rule-json-format.md).
+[rule-json-format.md](rule-json-format.md). Successful changes return the next
+draft `streamVersion` as the response `ETag`.
 
 ```http
 POST /rule-set-drafts/{draftId}/validate
 Accept: application/json
+If-Match: "3"
 ```
 
 Validation records a `RuleSetDraftValidated` event when the replayed draft can
 become a `RuleSetSnapshot`. Invalid draft JSON or invalid draft state returns
 `422 Unprocessable Entity` through `kopring-bricks` Web MVC error handling.
+
+Draft change endpoints use `kopring-bricks` `concurrency-control-starter`.
+Missing `If-Match` returns `428 Precondition Required`, stale `If-Match` returns
+`412 Precondition Failed`, and append-time stream conflicts return
+`409 Conflict`.
 
 ## Kopring Bricks Adoption Map
 
@@ -143,9 +161,6 @@ Already used:
 
 - `webmvc-error-starter`: validation errors are returned as Spring
   `ProblemDetail` responses through `ApiException`.
-
-Use when the full rule management HTTP API is added:
-
 - `concurrency-control-starter`: use `ETagGenerator` and `IfMatchValidator` for
   versioned draft or published rule-set updates. Do not model ETags in
   `RuleSetSnapshot`; keep them in the HTTP shell.

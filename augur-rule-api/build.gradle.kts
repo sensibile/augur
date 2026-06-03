@@ -11,6 +11,7 @@ dependencies {
     implementation(project(":augur-rule-management"))
 
     implementation(platform(libs.spring.boot.dependencies))
+    implementation(libs.kopring.bricks.concurrency.control.starter)
     implementation(libs.kopring.bricks.webmvc.error.starter)
     implementation(libs.kotlin.reflect)
 

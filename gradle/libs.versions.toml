@@ -18,6 +18,7 @@ spring-boot-test = { module = "org.springframework.boot:spring-boot-test" }
 spring-boot-test-autoconfigure = { module = "org.springframework.boot:spring-boot-test-autoconfigure" }
 
 kopring-bricks-webmvc-error-starter = { module = "me.sensibile:webmvc-error-starter", version.ref = "kopring-bricks" }
+kopring-bricks-concurrency-control-starter = { module = "me.sensibile:concurrency-control-starter", version.ref = "kopring-bricks" }
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
