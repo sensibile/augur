@@ -4,9 +4,10 @@
 management commands, events, draft state, and command processing live in the
 Spring-free `augur-rule-management` module.
 
-The first API surface is intentionally small. It accepts canonical rule JSON and
-validates whether it can become a `RuleSetSnapshot`. It does not publish,
-persist, cache, or evaluate rules.
+The first API surface is intentionally small. It accepts canonical rule JSON,
+validates whether it can become a `RuleSetSnapshot`, and exposes an in-memory
+rule-set draft workflow. It does not publish, durably persist, cache, or
+evaluate rules.
 
 ## Validate Rule Set
 
@@ -63,6 +64,74 @@ Invalid draft JSON returns `422 Unprocessable Entity` as a Spring
 - SDK modules must not depend on this API module.
 - Persistence, publishing, approval, and audit APIs will be added outside the
   SDK evaluation path.
+
+## Rule Set Drafts
+
+The draft API is backed by an in-memory `RuleManagementEventStore`. It proves the
+Spring shell can consume the Spring-free `augur-rule-management` module before
+adding durable storage.
+
+```http
+POST /rule-set-drafts
+Content-Type: application/json
+Accept: application/json
+```
+
+```json
+{
+  "version": 1
+}
+```
+
+Successful creation returns `201 Created`.
+
+```json
+{
+  "eventType": "RuleSetDraftCreated",
+  "draft": {
+    "draftId": "01972f7b-6d6d-7a2a-9e89-0c389fd26e56",
+    "ruleSetVersion": 1,
+    "status": "Draft",
+    "flagCount": 0,
+    "streamVersion": 1
+  }
+}
+```
+
+```http
+GET /rule-set-drafts/{draftId}
+Accept: application/json
+```
+
+Returns the current replayed draft state, or `404 Not Found` with
+`code=draft_not_found`.
+
+```http
+POST /rule-set-drafts/{draftId}/flags
+Content-Type: application/json
+Accept: application/json
+```
+
+The request body is a canonical flag JSON object from
+[rule-json-format.md](rule-json-format.md).
+
+```http
+POST /rule-set-drafts/{draftId}/flags/{flagKey}/rules
+Content-Type: application/json
+Accept: application/json
+```
+
+The request body is a canonical rule JSON object from
+[rule-json-format.md](rule-json-format.md).
+
+```http
+POST /rule-set-drafts/{draftId}/validate
+Accept: application/json
+```
+
+Validation records a `RuleSetDraftValidated` event when the replayed draft can
+become a `RuleSetSnapshot`. Invalid draft JSON or invalid draft state returns
+`422 Unprocessable Entity` through `kopring-bricks` Web MVC error handling.
 
 ## Kopring Bricks Adoption Map
 

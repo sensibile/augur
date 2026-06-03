@@ -66,9 +66,12 @@ Follow Kent Beck's Tidy First approach.
 
 ## Review Loop
 
-- After each implementation pass, review the changed code before handing off.
+- After each implementation pass, run a self-review before handing off.
+- Self-review the local diff as if reviewing another contributor's change.
 - Prioritize bugs, boundary regressions, API compatibility, missing tests, and
   architecture rule violations.
+- Check that the change follows the module boundary, Spring-free core, Tidy
+  First, and bricks integration rules in this file.
 - Apply necessary fixes found during review in the same task when they are
   clearly scoped.
 - Re-run the relevant tests and checks after review fixes.
@@ -238,4 +241,4 @@ Before adding admin/API, storage, SDK fetching, or cache modules, read
 - Do not revert user changes unless explicitly asked.
 - Keep edits scoped to the requested work.
 - Avoid unrelated refactors.
-- Run tests and relevant `mise` checks before handing off.
+- Run the self-review, tests, and relevant `mise` checks before handing off.

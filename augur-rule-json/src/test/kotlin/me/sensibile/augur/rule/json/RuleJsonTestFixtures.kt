@@ -89,6 +89,25 @@ internal fun ruleSetJson(
     }
     """.trimIndent()
 
+internal fun flagJson(): String =
+    """
+    {
+      "key": "new_checkout",
+      "enabled": true,
+      "defaultValue": false,
+      "rules": []
+    }
+    """.trimIndent()
+
+internal fun ruleJson(): String =
+    """
+    {
+      "id": "01890f2e-7cc3-7cc3-8c4f-123456789abc",
+      "serve": true,
+      "condition": ${predicateJson()}
+    }
+    """.trimIndent()
+
 internal fun matchedConditionJson(): String =
     """
     {

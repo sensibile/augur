@@ -59,6 +59,26 @@ object RuleJson {
             RuleSetValidator.validate(ruleSet).mapValidationError()
         }
 
+    fun decodeFlag(value: String): Outcome<RuleJsonError, Flag> =
+        try {
+            FlagJson.serializer()
+            json
+                .decodeFromString<FlagJson>(value)
+                .toDomain()
+        } catch (exception: IllegalArgumentException) {
+            Outcome.Err(RuleJsonError.InvalidJson(exception.message.orEmpty()))
+        }
+
+    fun decodeRule(value: String): Outcome<RuleJsonError, Rule> =
+        try {
+            RuleJsonDto.serializer()
+            json
+                .decodeFromString<RuleJsonDto>(value)
+                .toDomain()
+        } catch (exception: IllegalArgumentException) {
+            Outcome.Err(RuleJsonError.InvalidJson(exception.message.orEmpty()))
+        }
+
     fun encodeRuleSet(ruleSet: RuleSet): String =
         json.encodeToString(
             RuleSetJson.serializer(),

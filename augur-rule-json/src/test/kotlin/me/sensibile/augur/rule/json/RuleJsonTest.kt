@@ -19,6 +19,20 @@ class RuleJsonTest {
     }
 
     @Test
+    fun `decodes a flag`() {
+        val actual = RuleJson.decodeFlag(flagJson())
+
+        assertIs<Outcome.Ok<*>>(actual)
+    }
+
+    @Test
+    fun `decodes a rule`() {
+        val actual = RuleJson.decodeRule(ruleJson())
+
+        assertIs<Outcome.Ok<*>>(actual)
+    }
+
+    @Test
     fun `returns value object error when json contains invalid flag key`() {
         val json =
             """

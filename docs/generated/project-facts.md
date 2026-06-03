@@ -52,6 +52,7 @@ Use it as factual source material when updating human-authored documentation.
 
 - `implementation(project(":augur-rule-core"))`
 - `implementation(project(":augur-rule-json"))`
+- `implementation(project(":augur-rule-management"))`
 - `implementation(platform(libs.spring.boot.dependencies))`
 - `implementation(libs.kopring.bricks.webmvc.error.starter)`
 - `implementation(libs.kotlin.reflect)`
@@ -243,4 +244,13 @@ Use it as factual source material when updating human-authored documentation.
 - `class RuleSetValidationController` (augur-rule-api/src/main/kotlin/me/sensibile/augur/rule/api/RuleSetValidationController.kt)
 - `class RuleSetValidationException` (augur-rule-api/src/main/kotlin/me/sensibile/augur/rule/api/RuleSetValidationController.kt)
 - `class RuleSetValidationService` (augur-rule-api/src/main/kotlin/me/sensibile/augur/rule/api/RuleSetValidationService.kt)
+- `class InMemoryRuleManagementEventStore` (augur-rule-api/src/main/kotlin/me/sensibile/augur/rule/api/management/InMemoryRuleManagementEventStore.kt)
+- `class RuleManagementApiConfiguration` (augur-rule-api/src/main/kotlin/me/sensibile/augur/rule/api/management/RuleManagementApiConfiguration.kt)
+- `internal class DraftNotFoundException` (augur-rule-api/src/main/kotlin/me/sensibile/augur/rule/api/management/RuleManagementApiErrors.kt)
+- `internal class RuleJsonException` (augur-rule-api/src/main/kotlin/me/sensibile/augur/rule/api/management/RuleManagementApiErrors.kt)
+- `internal class ValueObjectException` (augur-rule-api/src/main/kotlin/me/sensibile/augur/rule/api/management/RuleManagementApiErrors.kt)
+- `data class CreateRuleSetDraftRequest` (augur-rule-api/src/main/kotlin/me/sensibile/augur/rule/api/management/RuleSetDraftContract.kt)
+- `data class RuleSetDraftResponse` (augur-rule-api/src/main/kotlin/me/sensibile/augur/rule/api/management/RuleSetDraftContract.kt)
+- `data class RuleSetDraftCommandResponse` (augur-rule-api/src/main/kotlin/me/sensibile/augur/rule/api/management/RuleSetDraftContract.kt)
+- `class RuleSetDraftController` (augur-rule-api/src/main/kotlin/me/sensibile/augur/rule/api/management/RuleSetDraftController.kt)
 
