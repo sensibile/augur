@@ -4,7 +4,6 @@ import me.sensibile.augur.rule.ValueObjectError
 import me.sensibile.augur.rule.management.RuleManagementCommandError
 import me.sensibile.augur.rule.management.RuleManagementCommandServiceError
 import me.sensibile.augur.rule.management.RuleManagementEventApplyError
-import me.sensibile.augur.rule.management.RuleManagementEventStoreError
 import me.sensibile.augur.rule.management.RuleManagementProcessError
 import me.sensibile.augur.rule.management.RuleSetDraftId
 import me.sensibile.kopringbricks.web.problem.autoconfigure.ApiException
@@ -26,121 +25,18 @@ private fun RuleManagementProcessError.toApiException(): ApiException =
 
 private fun RuleManagementCommandError.toApiException(): ApiException =
     when (this) {
-        is RuleManagementCommandError.DraftAlreadyExists,
-        is RuleManagementCommandError.DraftNotFound,
-        is RuleManagementCommandError.DraftIdMismatch,
-        is RuleManagementCommandError.DraftIsNotEditable,
-        is RuleManagementCommandError.DraftIsNotPublishable,
-        is RuleManagementCommandError.DraftIsNotArchivable,
-        -> {
-            toDraftApiException()
-        }
-
-        is RuleManagementCommandError.FlagAlreadyExists,
-        is RuleManagementCommandError.FlagNotFound,
-        -> {
-            toFlagApiException()
-        }
-
-        is RuleManagementCommandError.RuleAlreadyExists,
-        is RuleManagementCommandError.RuleNotFound,
-        is RuleManagementCommandError.ServeTypeMismatch,
-        -> {
-            toRuleApiException()
-        }
-
-        is RuleManagementCommandError.InvalidRuleSetDraft -> {
-            unprocessable("invalid_rule_set_draft", "Rule set draft $draftId failed validation.")
-        }
-    }
-
-private fun RuleManagementCommandError.toDraftApiException(): ApiException =
-    when (this) {
-        is RuleManagementCommandError.DraftAlreadyExists -> {
-            conflict("draft_already_exists", "Rule set draft $draftId already exists.")
-        }
-
-        is RuleManagementCommandError.DraftNotFound -> {
-            DraftNotFoundException(draftId)
-        }
-
-        is RuleManagementCommandError.DraftIdMismatch -> {
-            conflict(
-                "draft_id_mismatch",
-                "Expected draft $expected but command targeted $actual.",
-            )
-        }
-
-        is RuleManagementCommandError.DraftIsNotEditable -> {
-            conflict(
-                "draft_is_not_editable",
-                "Rule set draft $draftId is $status and cannot be edited.",
-            )
-        }
-
-        is RuleManagementCommandError.DraftIsNotPublishable -> {
-            conflict(
-                "draft_is_not_publishable",
-                "Rule set draft $draftId is $status and cannot be published.",
-            )
-        }
-
-        is RuleManagementCommandError.DraftIsNotArchivable -> {
-            conflict(
-                "draft_is_not_archivable",
-                "Rule set draft $draftId is $status and cannot be archived.",
-            )
-        }
-
-        else -> {
-            error("Not a draft command error: $this")
-        }
-    }
-
-private fun RuleManagementCommandError.toFlagApiException(): ApiException =
-    when (this) {
-        is RuleManagementCommandError.FlagAlreadyExists -> {
-            conflict(
-                "flag_already_exists",
-                "Flag ${flagKey.value} already exists in draft $draftId.",
-            )
-        }
-
-        is RuleManagementCommandError.FlagNotFound -> {
-            notFound("flag_not_found", "Flag ${flagKey.value} was not found in draft $draftId.")
-        }
-
-        else -> {
-            error("Not a flag command error: $this")
-        }
-    }
-
-private fun RuleManagementCommandError.toRuleApiException(): ApiException =
-    when (this) {
-        is RuleManagementCommandError.RuleAlreadyExists -> {
-            conflict(
-                "rule_already_exists",
-                "Rule $ruleId already exists under flag ${existingFlagKey.value} in draft $draftId.",
-            )
-        }
-
-        is RuleManagementCommandError.RuleNotFound -> {
-            notFound(
-                "rule_not_found",
-                "Rule $ruleId was not found under flag ${flagKey.value} in draft $draftId.",
-            )
-        }
-
-        is RuleManagementCommandError.ServeTypeMismatch -> {
-            unprocessable(
-                "serve_type_mismatch",
-                "Rule $ruleId serve type was $actual but flag ${flagKey.value} expects $expected.",
-            )
-        }
-
-        else -> {
-            error("Not a rule command error: $this")
-        }
+        is RuleManagementCommandError.DraftAlreadyExists -> toApiException()
+        is RuleManagementCommandError.DraftNotFound -> toApiException()
+        is RuleManagementCommandError.DraftIdMismatch -> toApiException()
+        is RuleManagementCommandError.DraftIsNotEditable -> toApiException()
+        is RuleManagementCommandError.DraftIsNotPublishable -> toApiException()
+        is RuleManagementCommandError.DraftIsNotArchivable -> toApiException()
+        is RuleManagementCommandError.InvalidRuleSetDraft -> toApiException()
+        is RuleManagementCommandError.FlagAlreadyExists -> toApiException()
+        is RuleManagementCommandError.FlagNotFound -> toApiException()
+        is RuleManagementCommandError.RuleAlreadyExists -> toApiException()
+        is RuleManagementCommandError.RuleNotFound -> toApiException()
+        is RuleManagementCommandError.ServeTypeMismatch -> toApiException()
     }
 
 private fun RuleManagementEventApplyError.toApiException(): ApiException =
@@ -148,25 +44,6 @@ private fun RuleManagementEventApplyError.toApiException(): ApiException =
         code = "rule_management_event_replay_failed",
         detail = "Stored rule management events could not be replayed.",
     )
-
-internal fun RuleManagementEventStoreError.toApiException(): ApiException =
-    when (this) {
-        is RuleManagementEventStoreError.StreamVersionConflict -> {
-            conflict(
-                code = "stream_version_conflict",
-                detail = "Rule management stream version does not match the expected version.",
-            )
-        }
-
-        is RuleManagementEventStoreError.StorageFailure -> {
-            ApiException(
-                status = HttpStatus.INTERNAL_SERVER_ERROR,
-                code = "rule_management_storage_failure",
-                detail = message,
-                title = "Rule management storage failed",
-            )
-        }
-    }
 
 internal class DraftNotFoundException(
     draftId: RuleSetDraftId,
@@ -177,7 +54,7 @@ internal class DraftNotFoundException(
         title = "Rule management resource not found",
     )
 
-private fun conflict(
+internal fun conflict(
     code: String,
     detail: String,
 ): ApiException =
@@ -188,7 +65,7 @@ private fun conflict(
         title = "Rule management command rejected",
     )
 
-private fun notFound(
+internal fun notFound(
     code: String,
     detail: String,
 ): ApiException =
@@ -199,7 +76,7 @@ private fun notFound(
         title = "Rule management resource not found",
     )
 
-private fun unprocessable(
+internal fun unprocessable(
     code: String,
     detail: String,
 ): ApiException =
