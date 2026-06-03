@@ -6,5 +6,6 @@ rootProject.name = "augur"
 
 include("augur-rule-core")
 include("augur-rule-json")
+include("augur-rule-management")
 include("augur-rule-sdk")
 include("augur-rule-api")

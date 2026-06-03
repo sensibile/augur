@@ -22,7 +22,8 @@ user intent and domain facts before adding persistence or a larger Admin API.
 
 ## Decision
 
-Rule management will model commands and domain events in the admin/API boundary.
+Rule management will model commands and domain events in the Spring-free
+`augur-rule-management` boundary.
 
 Commands represent user or system intent:
 
@@ -61,15 +62,19 @@ projections, and future event-sourced storage.
 `augur-rule-core` owns rule domain models, validation, snapshots, and
 evaluation.
 
-`augur-rule-api` or future admin modules own:
+`augur-rule-management` owns:
 
 - command handlers
 - domain event records
 - draft lifecycle
 - publish workflow
 - approval workflow
+
+`augur-rule-api` or future admin modules own:
+
 - audit and outbox integration
 - persistence and projection concerns
+- HTTP-facing rule management workflows
 
 The SDK must not expose rule management commands or events.
 

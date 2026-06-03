@@ -61,6 +61,9 @@ module_kind() {
     *rule-json)
       printf 'serialization adapter'
       ;;
+    *rule-management)
+      printf 'rule management core'
+      ;;
     *sdk*)
       printf 'sdk shell'
       ;;

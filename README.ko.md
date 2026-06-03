@@ -21,6 +21,7 @@ rule 관리 command/event 경계는 [docs/adr/0003-rule-management-command-event
 
 - `augur-rule-core`: Spring, HTTP, DB, serialization 의존성이 없는 순수 평가 코어
 - `augur-rule-json`: canonical JSON AST와 core domain 사이의 serialization adapter
+- `augur-rule-management`: Spring 없는 rule 작성 command, event, draft state
 - `augur-rule-sdk`: Kotlin 사용자를 위한 request builder와 SDK 편의 계층
 - `augur-rule-api`: rule 작성과 검증을 담당하는 Spring API shell
 

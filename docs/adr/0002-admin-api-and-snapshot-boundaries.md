@@ -6,10 +6,12 @@ Accepted
 
 ## Context
 
-Augur now has three rule-related modules:
+Augur now has these rule-related modules:
 
 - `augur-rule-core`: pure domain models, validation, and evaluation.
 - `augur-rule-json`: canonical JSON adapter for rule storage/transport.
+- `augur-rule-management`: Spring-free rule authoring commands, events, draft
+  state, and command processing.
 - `augur-rule-sdk`: Kotlin consumer facade for evaluating rule set snapshots.
 
 The next major concern is how rules are created, edited, validated, stored,
@@ -84,10 +86,11 @@ core SDK.
 
 ## Module Direction
 
-Expected future modules:
+Current and expected future modules:
 
-- `augur-admin-api` or `augur-rule-api`: Spring/API shell for authoring,
-  validation, publishing, and administration.
+- `augur-rule-management`: Spring-free rule management domain behavior.
+- `augur-rule-api`: Spring/API shell for authoring, validation, publishing, and
+  administration.
 - `augur-rule-storage-*`: persistence adapters if storage concerns become
   large enough to split.
 - Optional client/cache adapter modules if runtime snapshot fetching becomes a

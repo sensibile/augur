@@ -29,6 +29,7 @@ The initial Admin API contract is documented in
 
 - `augur-rule-core`: pure rule domain, validation, and evaluation
 - `augur-rule-json`: JSON storage format adapter
+- `augur-rule-management`: Spring-free rule authoring commands, events, and draft state
 - `augur-rule-sdk`: Kotlin-friendly request builders and SDK conveniences
 - `augur-rule-api`: Spring API shell for rule authoring and validation
 
