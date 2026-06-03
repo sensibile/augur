@@ -62,7 +62,7 @@ module_kind() {
       printf 'serialization adapter'
       ;;
     *rule-management)
-      printf 'rule management core'
+      printf 'management domain'
       ;;
     *sdk*)
       printf 'sdk shell'
@@ -149,7 +149,7 @@ Use it as factual source material when updating human-authored documentation.
 - Infrastructure tests should use real boundaries such as Testcontainers where practical.
 - Tidy First is preferred for behavior-preserving structural improvements.
 - Ktlint owns formatting; detekt should avoid duplicate formatting checks.
-- Architecture checks can be added with ArchUnit once service, SDK, and adapter modules exist.
+- Architecture checks can grow into ArchUnit or similar tests once shell checks become too limited.
 - Spring implementation should actively reuse existing `kopring-bricks` starters around infrastructure edges.
 
 EOF
