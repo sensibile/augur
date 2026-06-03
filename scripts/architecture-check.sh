@@ -64,8 +64,14 @@ assert_no_module_imports() {
 assert_production_dependencies "augur-rule-core"
 assert_production_dependencies "augur-rule-json" "augur-rule-core"
 assert_production_dependencies "augur-rule-management" "augur-rule-core"
+assert_production_dependencies "augur-rule-event-sourcing" "augur-rule-json" "augur-rule-management"
 assert_production_dependencies "augur-rule-sdk" "augur-rule-core"
-assert_production_dependencies "augur-rule-api" "augur-rule-core" "augur-rule-json" "augur-rule-management"
+assert_production_dependencies \
+  "augur-rule-api" \
+  "augur-rule-core" \
+  "augur-rule-json" \
+  "augur-rule-management" \
+  "augur-rule-event-sourcing"
 
 assert_no_module_imports "augur-rule-core" \
   "me.sensibile.augur.rule.json" \
@@ -76,6 +82,9 @@ assert_no_module_imports "augur-rule-json" \
   "me.sensibile.augur.rule.sdk" \
   "me.sensibile.augur.rule.api"
 assert_no_module_imports "augur-rule-management" \
+  "me.sensibile.augur.rule.sdk" \
+  "me.sensibile.augur.rule.api"
+assert_no_module_imports "augur-rule-event-sourcing" \
   "me.sensibile.augur.rule.sdk" \
   "me.sensibile.augur.rule.api"
 assert_no_module_imports "augur-rule-sdk" \

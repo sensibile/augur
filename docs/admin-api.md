@@ -151,6 +151,13 @@ Missing `If-Match` returns `428 Precondition Required`, stale `If-Match` returns
 `412 Precondition Failed`, and append-time stream conflicts return
 `409 Conflict`.
 
+Rule management storage is wired through `augur-rule-event-sourcing`, which
+adapts the Augur `RuleManagementEventStore` port to the `kopring-bricks`
+`EventSourcingTemplate`. The API module provides a non-durable
+`InMemoryBricksEventStore` fallback for local development. Disable that fallback
+with `augur.rule-management.event-store.in-memory.enabled=false` when wiring a
+durable bricks `EventStore`, such as the PostgreSQL-backed starter store.
+
 ## Rule Management Errors
 
 Rule management endpoints return Spring `ProblemDetail` responses through
@@ -194,13 +201,13 @@ Already used:
 - `concurrency-control-starter`: use `ETagGenerator` and `IfMatchValidator` for
   versioned draft or published rule-set updates. Do not model ETags in
   `RuleSetSnapshot`; keep them in the HTTP shell.
-
-Use when durable rule management storage is added:
-
 - `event-sourcing-starter`: use the starter's `EventStore` or
   `EventSourcingTemplate` for append/load infrastructure if drafts are persisted
   as event streams. Keep Augur command names, event classes, replay logic, and
   draft state in Augur.
+
+Use when durable rule management storage is added:
+
 - `vt-jdbc-client-starter`: use this instead of local JDBC plumbing when a
   PostgreSQL-backed bricks starter needs a `JdbcClient`.
 

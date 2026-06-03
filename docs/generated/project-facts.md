@@ -23,6 +23,7 @@ Use it as factual source material when updating human-authored documentation.
 - `augur-rule-core` (functional core)
 - `augur-rule-json` (serialization adapter)
 - `augur-rule-management` (management domain)
+- `augur-rule-event-sourcing` (module)
 - `augur-rule-sdk` (sdk shell)
 - `augur-rule-api` (service shell)
 
@@ -43,6 +44,14 @@ Use it as factual source material when updating human-authored documentation.
 - `api(project(":augur-rule-core"))`
 - `testImplementation(libs.kotlin.test.junit5)`
 
+### `augur-rule-event-sourcing`
+
+- `api(project(":augur-rule-management"))`
+- `api(libs.kopring.bricks.event.sourcing.starter)`
+- `implementation(project(":augur-rule-json"))`
+- `implementation(libs.kotlinx.serialization.json)`
+- `testImplementation(libs.kotlin.test.junit5)`
+
 ### `augur-rule-sdk`
 
 - `api(project(":augur-rule-core"))`
@@ -53,6 +62,7 @@ Use it as factual source material when updating human-authored documentation.
 - `implementation(project(":augur-rule-core"))`
 - `implementation(project(":augur-rule-json"))`
 - `implementation(project(":augur-rule-management"))`
+- `implementation(project(":augur-rule-event-sourcing"))`
 - `implementation(platform(libs.spring.boot.dependencies))`
 - `implementation(libs.kopring.bricks.concurrency.control.starter)`
 - `implementation(libs.kopring.bricks.webmvc.error.starter)`
@@ -220,6 +230,18 @@ Use it as factual source material when updating human-authored documentation.
 - `data class RuleSetDraftState` (augur-rule-management/src/main/kotlin/me/sensibile/augur/rule/management/RuleSetDraftState.kt)
 - `enum class RuleSetDraftStatus` (augur-rule-management/src/main/kotlin/me/sensibile/augur/rule/management/RuleSetDraftState.kt)
 
+### `augur-rule-event-sourcing`
+
+- `class BricksRuleManagementEventStore` (augur-rule-event-sourcing/src/main/kotlin/me/sensibile/augur/rule/eventsourcing/BricksRuleManagementEventStore.kt)
+- `class InMemoryBricksEventStore` (augur-rule-event-sourcing/src/main/kotlin/me/sensibile/augur/rule/eventsourcing/InMemoryBricksEventStore.kt)
+- `object JsonRuleManagementEventCodec` (augur-rule-event-sourcing/src/main/kotlin/me/sensibile/augur/rule/eventsourcing/JsonRuleManagementEventCodec.kt)
+- `interface RuleManagementEventCodec` (augur-rule-event-sourcing/src/main/kotlin/me/sensibile/augur/rule/eventsourcing/RuleManagementEventCodec.kt)
+- `sealed interface RuleManagementEventCodecError` (augur-rule-event-sourcing/src/main/kotlin/me/sensibile/augur/rule/eventsourcing/RuleManagementEventCodec.kt)
+- `data class InvalidStreamId` (augur-rule-event-sourcing/src/main/kotlin/me/sensibile/augur/rule/eventsourcing/RuleManagementEventCodec.kt)
+- `data class InvalidValueObject` (augur-rule-event-sourcing/src/main/kotlin/me/sensibile/augur/rule/eventsourcing/RuleManagementEventCodec.kt)
+- `data class InvalidPayload` (augur-rule-event-sourcing/src/main/kotlin/me/sensibile/augur/rule/eventsourcing/RuleManagementEventCodec.kt)
+- `data class UnsupportedEventType` (augur-rule-event-sourcing/src/main/kotlin/me/sensibile/augur/rule/eventsourcing/RuleManagementEventCodec.kt)
+
 ### `augur-rule-sdk`
 
 - `class AugurEvaluator private constructor` (augur-rule-sdk/src/main/kotlin/me/sensibile/augur/rule/sdk/AugurEvaluator.kt)
@@ -245,7 +267,6 @@ Use it as factual source material when updating human-authored documentation.
 - `class RuleSetValidationController` (augur-rule-api/src/main/kotlin/me/sensibile/augur/rule/api/RuleSetValidationController.kt)
 - `class RuleSetValidationException` (augur-rule-api/src/main/kotlin/me/sensibile/augur/rule/api/RuleSetValidationController.kt)
 - `class RuleSetValidationService` (augur-rule-api/src/main/kotlin/me/sensibile/augur/rule/api/RuleSetValidationService.kt)
-- `class InMemoryRuleManagementEventStore` (augur-rule-api/src/main/kotlin/me/sensibile/augur/rule/api/management/InMemoryRuleManagementEventStore.kt)
 - `class RuleManagementApiConfiguration` (augur-rule-api/src/main/kotlin/me/sensibile/augur/rule/api/management/RuleManagementApiConfiguration.kt)
 - `internal class DraftNotFoundException` (augur-rule-api/src/main/kotlin/me/sensibile/augur/rule/api/management/RuleManagementApiErrors.kt)
 - `internal class RuleJsonException` (augur-rule-api/src/main/kotlin/me/sensibile/augur/rule/api/management/RuleManagementApiErrors.kt)

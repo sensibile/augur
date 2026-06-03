@@ -79,10 +79,54 @@ object RuleJson {
             Outcome.Err(RuleJsonError.InvalidJson(exception.message.orEmpty()))
         }
 
+    fun decodeCondition(value: String): Outcome<RuleJsonError, Condition> =
+        try {
+            ConditionJson.serializer()
+            json
+                .decodeFromString<ConditionJson>(value)
+                .toDomain()
+        } catch (exception: IllegalArgumentException) {
+            Outcome.Err(RuleJsonError.InvalidJson(exception.message.orEmpty()))
+        }
+
+    fun decodeRuleValue(value: String): Outcome<RuleJsonError, RuleValue> =
+        try {
+            JsonElement.serializer()
+            json
+                .decodeFromString<JsonElement>(value)
+                .toRuleValue()
+        } catch (exception: IllegalArgumentException) {
+            Outcome.Err(RuleJsonError.InvalidJson(exception.message.orEmpty()))
+        }
+
     fun encodeRuleSet(ruleSet: RuleSet): String =
         json.encodeToString(
             RuleSetJson.serializer(),
             RuleSetJson.fromDomain(ruleSet),
+        )
+
+    fun encodeFlag(flag: Flag): String =
+        json.encodeToString(
+            FlagJson.serializer(),
+            FlagJson.fromDomain(flag),
+        )
+
+    fun encodeRule(rule: Rule): String =
+        json.encodeToString(
+            RuleJsonDto.serializer(),
+            RuleJsonDto.fromDomain(rule),
+        )
+
+    fun encodeCondition(condition: Condition): String =
+        json.encodeToString(
+            ConditionJson.serializer(),
+            ConditionJson.fromDomain(condition),
+        )
+
+    fun encodeRuleValue(value: RuleValue): String =
+        json.encodeToString(
+            JsonElement.serializer(),
+            value.toJsonElement(),
         )
 }
 

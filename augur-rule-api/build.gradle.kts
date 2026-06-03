@@ -9,6 +9,7 @@ dependencies {
     implementation(project(":augur-rule-core"))
     implementation(project(":augur-rule-json"))
     implementation(project(":augur-rule-management"))
+    implementation(project(":augur-rule-event-sourcing"))
 
     implementation(platform(libs.spring.boot.dependencies))
     implementation(libs.kopring.bricks.concurrency.control.starter)
