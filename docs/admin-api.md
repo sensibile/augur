@@ -151,6 +151,36 @@ Missing `If-Match` returns `428 Precondition Required`, stale `If-Match` returns
 `412 Precondition Failed`, and append-time stream conflicts return
 `409 Conflict`.
 
+## Rule Management Errors
+
+Rule management endpoints return Spring `ProblemDetail` responses through
+`kopring-bricks` Web MVC error handling. Augur-owned management errors use
+stable snake_case `code` values. Bricks concurrency errors keep the starter's
+uppercase code values.
+
+| HTTP status | Code | When |
+| --- | --- | --- |
+| `400 Bad Request` | `invalid_draft_id` | Draft id path variable is not a UUID. |
+| `400 Bad Request` | `invalid_flag_key` | Flag key path variable does not match the domain format. |
+| `400 Bad Request` | `invalid_rule_set_version` | Draft creation version is not positive. |
+| `404 Not Found` | `draft_not_found` | The requested draft stream does not exist. |
+| `404 Not Found` | `flag_not_found` | A command targets a missing flag. |
+| `404 Not Found` | `rule_not_found` | A command targets a missing rule. |
+| `409 Conflict` | `draft_already_exists` | A create command targets an existing draft. |
+| `409 Conflict` | `draft_id_mismatch` | Loaded draft state does not match the command draft id. |
+| `409 Conflict` | `draft_is_not_editable` | A command tries to edit a non-draft draft. |
+| `409 Conflict` | `draft_is_not_publishable` | A command tries to publish a draft in the wrong state. |
+| `409 Conflict` | `draft_is_not_archivable` | A command tries to archive a draft in the wrong state. |
+| `409 Conflict` | `flag_already_exists` | A command tries to add an existing flag key. |
+| `409 Conflict` | `rule_already_exists` | A command tries to add an existing rule id. |
+| `409 Conflict` | `stream_version_conflict` | Append-time stream version check fails. |
+| `409 Conflict` | `rule_management_event_replay_failed` | Stored management events cannot be replayed. |
+| `422 Unprocessable Entity` | `invalid_json` | Canonical flag or rule JSON cannot be decoded. |
+| `422 Unprocessable Entity` | `serve_type_mismatch` | Rule serve value type does not match the flag default value type. |
+| `422 Unprocessable Entity` | `invalid_rule_set_draft` | Draft validation fails before snapshot creation. |
+| `428 Precondition Required` | `PRECONDITION_REQUIRED` | Required `If-Match` header is missing. |
+| `412 Precondition Failed` | `PRECONDITION_FAILED` | `If-Match` does not match the current draft `ETag`. |
+
 ## Kopring Bricks Adoption Map
 
 `augur-rule-api` should stay a thin Spring shell around Augur-owned

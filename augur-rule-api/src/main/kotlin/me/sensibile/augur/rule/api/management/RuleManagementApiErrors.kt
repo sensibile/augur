@@ -50,7 +50,7 @@ private fun RuleManagementCommandError.toApiException(): ApiException =
         }
 
         is RuleManagementCommandError.InvalidRuleSetDraft -> {
-            unprocessable("invalid_rule_set_draft", "Rule set draft validation failed.")
+            unprocessable("invalid_rule_set_draft", "Rule set draft $draftId failed validation.")
         }
     }
 
@@ -146,7 +146,7 @@ private fun RuleManagementCommandError.toRuleApiException(): ApiException =
 private fun RuleManagementEventApplyError.toApiException(): ApiException =
     conflict(
         code = "rule_management_event_replay_failed",
-        detail = toString(),
+        detail = "Stored rule management events could not be replayed.",
     )
 
 internal fun RuleManagementEventStoreError.toApiException(): ApiException =
@@ -154,7 +154,7 @@ internal fun RuleManagementEventStoreError.toApiException(): ApiException =
         is RuleManagementEventStoreError.StreamVersionConflict -> {
             conflict(
                 code = "stream_version_conflict",
-                detail = "Expected stream version $expected but actual version was $actual.",
+                detail = "Rule management stream version does not match the expected version.",
             )
         }
 
@@ -228,8 +228,15 @@ internal class RuleJsonException(
 internal class ValueObjectException(
     error: ValueObjectError,
 ) : BadRequestException(
-        code = "invalid_${error.field}",
-        detail = error.toString(),
+        code =
+            when (error.field) {
+                "flagKey" -> "invalid_flag_key"
+                "ruleSetVersion" -> "invalid_rule_set_version"
+                "ruleManagementStreamVersion" -> "invalid_rule_management_stream_version"
+                "ruleSetDraftId" -> "invalid_rule_set_draft_id"
+                else -> "invalid_${error.field}"
+            },
+        detail = "Invalid value for ${error.field}.",
     )
 
 internal open class BadRequestException(
