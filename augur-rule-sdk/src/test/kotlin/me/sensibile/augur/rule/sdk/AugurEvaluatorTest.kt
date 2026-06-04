@@ -76,6 +76,20 @@ class AugurEvaluatorTest {
     }
 
     @Test
+    fun `evaluates number flag with default attributes configuration`() {
+        val evaluator = AugurEvaluator.of(validNumberRuleSet())
+
+        val actual =
+            evaluator.evaluateNumber(
+                flagKey = "discount_percent",
+                targetKey = "account-1",
+            )
+
+        assertEquals(0.0, (actual as Outcome.Ok).value.value)
+        assertEquals(EvaluationReason.Default, actual.value.decision.reason)
+    }
+
+    @Test
     fun `evaluates list flag from rule set snapshot`() {
         val evaluator = AugurEvaluator.of(validListRuleSet())
 
@@ -89,6 +103,20 @@ class AugurEvaluatorTest {
 
         assertEquals(listOf(RuleValue.string("KR"), RuleValue.string("JP")), (actual as Outcome.Ok).value.value)
         assertEquals(EvaluationReason.RuleMatch, actual.value.decision.reason)
+    }
+
+    @Test
+    fun `evaluates list flag with default attributes configuration`() {
+        val evaluator = AugurEvaluator.of(validListRuleSet())
+
+        val actual =
+            evaluator.evaluateList(
+                flagKey = "enabled_regions",
+                targetKey = "account-1",
+            )
+
+        assertEquals(listOf(RuleValue.string("US")), (actual as Outcome.Ok).value.value)
+        assertEquals(EvaluationReason.Default, actual.value.decision.reason)
     }
 
     @Test

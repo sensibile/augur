@@ -90,6 +90,18 @@ class EvaluationRequestBuilderTest {
     }
 
     @Test
+    fun `builds evaluation request from empty attributes`() {
+        val actual =
+            evaluationRequest(
+                flagKey = "new_checkout",
+                targetKey = "user-1",
+                attributes = EvaluationAttributes.empty(),
+            )
+
+        assertEquals(emptyMap(), (actual as Outcome.Ok).value.context.attributes)
+    }
+
+    @Test
     fun `returns value object error when flag key is invalid`() {
         val actual =
             evaluationRequest(

@@ -258,6 +258,21 @@ class RuleEngineEvaluationTest {
     }
 
     @Test
+    fun `trace exposes no matched rule when all rules miss`() {
+        val missedRuleId = ruleId("01890f2e-7cc3-7cc3-8c4f-123456789abc")
+        val trace =
+            EvaluationTrace(
+                listOf(
+                    RuleEvaluationTrace(missedRuleId, matched = false),
+                ),
+            )
+
+        assertEquals(null, trace.matchedRuleId)
+        assertEquals(emptyList(), trace.matched)
+        assertEquals(listOf(RuleEvaluationTrace(missedRuleId, matched = false)), trace.missed)
+    }
+
+    @Test
     fun `evaluates not condition`() {
         val actual =
             evaluateSingleRule(
@@ -266,6 +281,17 @@ class RuleEngineEvaluationTest {
             )
 
         assertEquals(EvaluationReason.RuleMatch, actual.reason)
+    }
+
+    @Test
+    fun `not condition misses when nested condition matches`() {
+        val actual =
+            evaluateSingleRule(
+                condition = Condition.Not(predicate("blocked", Operator.Eq, bool(true))),
+                attributes = mapOf(attributeKey("blocked") to bool(true)),
+            )
+
+        assertEquals(EvaluationReason.Default, actual.reason)
     }
 
     @Test
@@ -285,6 +311,22 @@ class RuleEngineEvaluationTest {
     }
 
     @Test
+    fun `presence operators miss on opposite presence state`() {
+        val existsDecision =
+            evaluateSingleRule(
+                condition = predicate("country", Operator.Exists),
+            )
+        val missingDecision =
+            evaluateSingleRule(
+                condition = predicate("country", Operator.Missing),
+                attributes = mapOf(attributeKey("country") to string("KR")),
+            )
+
+        assertEquals(EvaluationReason.Default, existsDecision.reason)
+        assertEquals(EvaluationReason.Default, missingDecision.reason)
+    }
+
+    @Test
     fun `evaluates negative equality and membership operators`() {
         val notEqDecision =
             evaluateSingleRule(
@@ -299,6 +341,22 @@ class RuleEngineEvaluationTest {
 
         assertEquals(EvaluationReason.RuleMatch, notEqDecision.reason)
         assertEquals(EvaluationReason.RuleMatch, notInDecision.reason)
+    }
+
+    @Test
+    fun `negative equality and membership miss for missing or contained values`() {
+        val notEqDecision =
+            evaluateSingleRule(
+                condition = predicate("country", Operator.NotEq, string("US")),
+            )
+        val notInDecision =
+            evaluateSingleRule(
+                condition = predicate("plan", Operator.NotIn, list(string("free"), string("trial"))),
+                attributes = mapOf(attributeKey("plan") to string("free")),
+            )
+
+        assertEquals(EvaluationReason.Default, notEqDecision.reason)
+        assertEquals(EvaluationReason.Default, notInDecision.reason)
     }
 
     @Test
@@ -325,6 +383,35 @@ class RuleEngineEvaluationTest {
     }
 
     @Test
+    fun `numeric comparison operators miss when comparison is false`() {
+        val greaterThanDecision =
+            evaluateSingleRule(
+                condition = predicate("age", Operator.GreaterThan, number(18.0)),
+                attributes = mapOf(attributeKey("age") to number(18.0)),
+            )
+        val greaterThanOrEqualDecision =
+            evaluateSingleRule(
+                condition = predicate("age", Operator.GreaterThanOrEqual, number(19.0)),
+                attributes = mapOf(attributeKey("age") to number(18.0)),
+            )
+        val lessThanDecision =
+            evaluateSingleRule(
+                condition = predicate("age", Operator.LessThan, number(20.0)),
+                attributes = mapOf(attributeKey("age") to number(20.0)),
+            )
+        val lessThanOrEqualDecision =
+            evaluateSingleRule(
+                condition = predicate("age", Operator.LessThanOrEqual, number(19.0)),
+                attributes = mapOf(attributeKey("age") to number(20.0)),
+            )
+
+        assertEquals(EvaluationReason.Default, greaterThanDecision.reason)
+        assertEquals(EvaluationReason.Default, greaterThanOrEqualDecision.reason)
+        assertEquals(EvaluationReason.Default, lessThanDecision.reason)
+        assertEquals(EvaluationReason.Default, lessThanOrEqualDecision.reason)
+    }
+
+    @Test
     fun `evaluates contains operators`() {
         val stringContainsDecision =
             evaluateSingleRule(
@@ -339,6 +426,17 @@ class RuleEngineEvaluationTest {
 
         assertEquals(EvaluationReason.RuleMatch, stringContainsDecision.reason)
         assertEquals(EvaluationReason.RuleMatch, listContainsDecision.reason)
+    }
+
+    @Test
+    fun `contains operator misses for unsupported actual value type`() {
+        val actual =
+            evaluateSingleRule(
+                condition = predicate("email", Operator.Contains, string("@example.com")),
+                attributes = mapOf(attributeKey("email") to bool(true)),
+            )
+
+        assertEquals(EvaluationReason.Default, actual.reason)
     }
 
     @Test

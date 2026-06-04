@@ -31,11 +31,15 @@ import me.sensibile.augur.rule.management.RuleSetDraftCreated
 import me.sensibile.augur.rule.management.RuleSetDraftId
 import me.sensibile.augur.rule.management.RuleSetDraftValidated
 import me.sensibile.augur.rule.management.RuleSetPublished
+import me.sensibile.kopringbricks.eventsourcing.autoconfigure.EventAppendResult
 import me.sensibile.kopringbricks.eventsourcing.autoconfigure.EventSourcingTemplate
+import me.sensibile.kopringbricks.eventsourcing.autoconfigure.EventStore
+import me.sensibile.kopringbricks.eventsourcing.autoconfigure.EventStoreEvent
 import me.sensibile.kopringbricks.eventsourcing.autoconfigure.StoredEvent
 import java.time.Instant
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertIs
 import kotlin.uuid.Uuid
 
 class BricksRuleManagementEventStoreTest {
@@ -147,6 +151,87 @@ class BricksRuleManagementEventStoreTest {
     }
 
     @Test
+    fun `maps bricks version conflict with actual version to stream version`() {
+        val store = ruleManagementEventStore()
+        val draftId = draftId()
+        val created =
+            RuleSetDraftCreated(
+                eventId = eventId(),
+                draftId = draftId,
+                ruleSetVersion = ruleSetVersion(1),
+            )
+        val nextCreated =
+            created.copy(eventId = eventId("018ff7c1-9354-7b02-b021-76d2791d6a26"))
+        val appended = store.append(RuleManagementExpectedStreamVersion.NoStream, created)
+        assertEquals(streamVersion(1), (appended as Outcome.Ok).value)
+
+        val actual = store.append(RuleManagementExpectedStreamVersion.NoStream, nextCreated)
+
+        assertEquals(
+            Outcome.Err(
+                RuleManagementEventStoreError.StreamVersionConflict(
+                    draftId = draftId,
+                    expected = RuleManagementExpectedStreamVersion.NoStream,
+                    actual = streamVersion(1),
+                ),
+            ),
+            actual,
+        )
+    }
+
+    @Test
+    fun `maps stored event decode failure to storage failure when loading`() {
+        val bricksStore = InMemoryBricksEventStore()
+        val draftId = draftId()
+        bricksStore.append(
+            streamId = draftId.toStreamId(),
+            expectedVersion = 0,
+            events =
+                listOf(
+                    EventStoreEvent(
+                        id = eventId().value.toString(),
+                        eventType = "unknown.event",
+                        eventVersion = 1,
+                        payloadJson = "{}",
+                    ),
+                ),
+        )
+        val store = BricksRuleManagementEventStore(EventSourcingTemplate(bricksStore))
+
+        val actual = store.load(draftId)
+
+        val error = assertIs<RuleManagementEventStoreError.StorageFailure>((actual as Outcome.Err).error)
+        assertEquals("Unsupported rule management event type: unknown.event", error.message)
+    }
+
+    @Test
+    fun `maps runtime failures from bricks store to storage failure`() {
+        val loadStore =
+            BricksRuleManagementEventStore(
+                EventSourcingTemplate(FailingBricksEventStore(loadMessage = "load failed")),
+            )
+        val appendStore =
+            BricksRuleManagementEventStore(
+                EventSourcingTemplate(FailingBricksEventStore(appendMessage = "append failed")),
+            )
+        val event =
+            RuleSetDraftCreated(
+                eventId = eventId(),
+                draftId = draftId(),
+                ruleSetVersion = ruleSetVersion(1),
+            )
+
+        assertEquals(
+            Outcome.Err(RuleManagementEventStoreError.StorageFailure("load failed")),
+            loadStore.load(event.draftId),
+        )
+        assertEquals(
+            Outcome.Err(RuleManagementEventStoreError.StorageFailure("append failed")),
+            appendStore.append(RuleManagementExpectedStreamVersion.NoStream, event),
+        )
+    }
+
+    @Test
     fun `returns codec error when stored event has unsupported type`() {
         val actual =
             JsonRuleManagementEventCodec.decode(
@@ -160,6 +245,49 @@ class BricksRuleManagementEventStoreTest {
             Outcome.Err(RuleManagementEventCodecError.UnsupportedEventType("unknown.event")),
             actual,
         )
+    }
+
+    @Test
+    fun `returns codec error when event id is malformed`() {
+        val actual =
+            JsonRuleManagementEventCodec.decode(
+                storedEvent(
+                    id = "not-a-uuid",
+                    eventType = "rule-set-draft.created",
+                    payloadJson = """{"ruleSetVersion":1}""",
+                ),
+            )
+
+        val error = assertIs<RuleManagementEventCodecError.InvalidPayload>((actual as Outcome.Err).error)
+        assertEquals("ruleManagementEventId", error.eventType)
+    }
+
+    @Test
+    fun `returns codec error when payload json is malformed`() {
+        val actual =
+            JsonRuleManagementEventCodec.decode(
+                storedEvent(
+                    eventType = "rule-set-draft.created",
+                    payloadJson = """{"ruleSetVersion":""",
+                ),
+            )
+
+        val error = assertIs<RuleManagementEventCodecError.InvalidPayload>((actual as Outcome.Err).error)
+        assertEquals("rule-set-draft.created", error.eventType)
+    }
+
+    @Test
+    fun `returns codec error when payload value object is invalid`() {
+        val actual =
+            JsonRuleManagementEventCodec.decode(
+                storedEvent(
+                    eventType = "flag.enabled",
+                    payloadJson = """{"flagKey":"Invalid Key"}""",
+                ),
+            )
+
+        val error = assertIs<RuleManagementEventCodecError.InvalidPayload>((actual as Outcome.Err).error)
+        assertEquals("flag.enabled", error.eventType)
     }
 
     @Test
@@ -247,12 +375,13 @@ class BricksRuleManagementEventStoreTest {
     private fun attributeKey(value: String): AttributeKey = AttributeKey.of(value).requireOk()
 
     private fun storedEvent(
+        id: String = "018ff7c1-9354-7b02-b021-76d2791d6a22",
         streamId: String = "rule-set-draft:018ff7c1-9354-7b02-b021-76d2791d6a21",
         eventType: String,
         payloadJson: String,
     ): StoredEvent =
         StoredEvent(
-            id = "018ff7c1-9354-7b02-b021-76d2791d6a22",
+            id = id,
             streamId = streamId,
             streamVersion = 1,
             eventType = eventType,
@@ -271,4 +400,20 @@ class BricksRuleManagementEventStoreTest {
             is Outcome.Err -> null
             is Outcome.Ok -> value
         }
+}
+
+private class FailingBricksEventStore(
+    private val loadMessage: String = "load failed",
+    private val appendMessage: String = "append failed",
+) : EventStore {
+    override fun append(
+        streamId: String,
+        expectedVersion: Long,
+        events: List<EventStoreEvent>,
+    ): EventAppendResult = throw IllegalStateException(appendMessage)
+
+    override fun load(
+        streamId: String,
+        fromVersion: Long,
+    ): List<StoredEvent> = throw IllegalStateException(loadMessage)
 }

@@ -153,4 +153,24 @@ class RuleManagementRuleEventApplierTest {
             actual,
         )
     }
+
+    @Test
+    fun `rejects rule removed event when flag does not exist`() {
+        val state = draftState()
+        val flagKey = flagKey("new_checkout")
+        val event =
+            RuleRemoved(
+                eventId = eventId(),
+                draftId = state.draftId,
+                flagKey = flagKey,
+                ruleId = ruleId(),
+            )
+
+        val actual = RuleManagementEventApplier.apply(state = state, event = event)
+
+        assertEquals(
+            Outcome.Err(RuleManagementEventApplyError.FlagNotFound(state.draftId, flagKey)),
+            actual,
+        )
+    }
 }
