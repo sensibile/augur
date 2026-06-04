@@ -1,8 +1,12 @@
 package me.sensibile.augur.rule.json
 
+import me.sensibile.augur.rule.Condition
+import me.sensibile.augur.rule.Operator
 import me.sensibile.augur.rule.Outcome
 import me.sensibile.augur.rule.RuleSet
 import me.sensibile.augur.rule.RuleSetSnapshot
+import me.sensibile.augur.rule.RuleValue
+import me.sensibile.augur.rule.RuleValueType
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
@@ -30,6 +34,46 @@ class RuleJsonTest {
         val actual = RuleJson.decodeRule(ruleJson())
 
         assertIs<Outcome.Ok<*>>(actual)
+    }
+
+    @Test
+    fun `encodes flag rule condition and rule values through public facade`() {
+        val ruleSet = checkoutRuleSet()
+        val flag = ruleSet.flags.getValue(flagKey("new_checkout"))
+        val rule = flag.rules.single()
+        val condition =
+            Condition.Not(
+                Condition.Any(
+                    listOf(
+                        Condition.Predicate(
+                            attributeKey = attributeKey("plan"),
+                            operator = Operator.Eq,
+                            value = RuleValue.string("free"),
+                        ),
+                    ),
+                ),
+            )
+
+        assertEquals(Outcome.Ok(flag), RuleJson.decodeFlag(RuleJson.encodeFlag(flag)))
+        assertEquals(Outcome.Ok(rule), RuleJson.decodeRule(RuleJson.encodeRule(rule)))
+        assertEquals(Outcome.Ok(condition), RuleJson.decodeCondition(RuleJson.encodeCondition(condition)))
+        assertEquals(Outcome.Ok(RuleValue.NullValue), RuleJson.decodeRuleValue(RuleJson.encodeRuleValue(RuleValue.NullValue)))
+        assertEquals(Outcome.Ok(number(10.5)), RuleJson.decodeRuleValue(RuleJson.encodeRuleValue(number(10.5))))
+    }
+
+    @Test
+    fun `decodes standalone condition and rule value malformed input as invalid json`() {
+        assertIs<Outcome.Err<RuleJsonError.InvalidJson>>(RuleJson.decodeCondition("""{"type":"""))
+        assertIs<Outcome.Err<RuleJsonError.InvalidJson>>(RuleJson.decodeRuleValue("""["unterminated""""))
+        assertIs<Outcome.Err<RuleJsonError.InvalidJson>>(RuleJson.decodeFlag("""{"key":"""))
+        assertIs<Outcome.Err<RuleJsonError.InvalidJson>>(RuleJson.decodeRule("""{"id":"""))
+    }
+
+    @Test
+    fun `returns invalid rule value for unsupported json object`() {
+        val actual = RuleJson.decodeRuleValue("""{"nested":true}""")
+
+        assertEquals(Outcome.Err(RuleJsonError.InvalidRuleValue(RuleValueType.Null)), actual)
     }
 
     @Test

@@ -58,6 +58,12 @@ internal fun bool(value: Boolean): RuleValue.BooleanValue = RuleValue.boolean(va
 
 internal fun string(value: String): RuleValue.StringValue = RuleValue.string(value)
 
+internal fun number(value: Double): RuleValue.NumberValue =
+    when (val result = RuleValue.number(value)) {
+        is Outcome.Err -> error("Invalid test number: ${result.error}")
+        is Outcome.Ok -> result.value
+    }
+
 internal fun list(vararg values: RuleValue): RuleValue.ListValue = RuleValue.list(values.toList())
 
 internal fun sampleRuleSetJson(condition: String = matchedConditionJson()): String = ruleSetJson(condition = condition)
