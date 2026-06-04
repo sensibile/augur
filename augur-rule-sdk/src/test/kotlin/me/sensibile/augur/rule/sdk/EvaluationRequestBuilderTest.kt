@@ -40,6 +40,40 @@ class EvaluationRequestBuilderTest {
     }
 
     @Test
+    fun `builds evaluation request from list attribute`() {
+        val actual =
+            evaluationRequest(
+                flagKey = "new_checkout",
+                targetKey = "user-1",
+            ) {
+                list("segments", listOf(RuleValue.string("beta"), RuleValue.string("paid")))
+            }
+
+        assertEquals(
+            RuleValue.list(listOf(RuleValue.string("beta"), RuleValue.string("paid"))),
+            (actual as Outcome.Ok).value.context.attributes[attributeKey("segments")],
+        )
+    }
+
+    @Test
+    fun `keeps first builder error when later attributes are also invalid`() {
+        val actual =
+            attributes {
+                string("Invalid Key", "KR")
+                number("score", Double.NaN)
+            }
+
+        assertEquals(
+            Outcome.Err(
+                EvaluationRequestBuildError.InvalidValueObject(
+                    ValueObjectError.InvalidFormat("attributeKey", "Invalid Key"),
+                ),
+            ),
+            actual,
+        )
+    }
+
+    @Test
     fun `builds evaluation request from prebuilt attributes`() {
         val attributes =
             attributes {

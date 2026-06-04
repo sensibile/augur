@@ -3,6 +3,7 @@ package me.sensibile.augur.rule.sdk
 import me.sensibile.augur.rule.EvaluationError
 import me.sensibile.augur.rule.EvaluationReason
 import me.sensibile.augur.rule.Outcome
+import me.sensibile.augur.rule.RuleValue
 import me.sensibile.augur.rule.RuleValueType
 import me.sensibile.augur.rule.ValueObjectError
 import kotlin.test.Test
@@ -42,6 +43,52 @@ class AugurEvaluatorTest {
 
         assertEquals(false, (actual as Outcome.Ok).value.value)
         assertEquals(EvaluationReason.Default, actual.value.decision.reason)
+    }
+
+    @Test
+    fun `evaluates string flag from rule set snapshot`() {
+        val evaluator = AugurEvaluator.of(validStringRuleSet())
+
+        val actual =
+            evaluator.evaluateString(
+                flagKey = "copy_text",
+                targetKey = "user-1",
+            )
+
+        assertEquals("control", (actual as Outcome.Ok).value.value)
+        assertEquals(EvaluationReason.Default, actual.value.decision.reason)
+    }
+
+    @Test
+    fun `evaluates number flag from rule set snapshot`() {
+        val evaluator = AugurEvaluator.of(validNumberRuleSet())
+
+        val actual =
+            evaluator.evaluateNumber(
+                flagKey = "discount_percent",
+                targetKey = "account-1",
+            ) {
+                string("plan", "team")
+            }
+
+        assertEquals(15.0, (actual as Outcome.Ok).value.value)
+        assertEquals(EvaluationReason.RuleMatch, actual.value.decision.reason)
+    }
+
+    @Test
+    fun `evaluates list flag from rule set snapshot`() {
+        val evaluator = AugurEvaluator.of(validListRuleSet())
+
+        val actual =
+            evaluator.evaluateList(
+                flagKey = "enabled_regions",
+                targetKey = "account-1",
+            ) {
+                string("tier", "enterprise")
+            }
+
+        assertEquals(listOf(RuleValue.string("KR"), RuleValue.string("JP")), (actual as Outcome.Ok).value.value)
+        assertEquals(EvaluationReason.RuleMatch, actual.value.decision.reason)
     }
 
     @Test

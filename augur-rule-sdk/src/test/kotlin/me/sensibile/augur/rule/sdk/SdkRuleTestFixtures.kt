@@ -78,6 +78,64 @@ internal fun validStringRuleSet() =
         ),
     )
 
+internal fun validNumberRuleSet() =
+    valid(
+        RuleSet(
+            version = version(1),
+            flags =
+                mapOf(
+                    flagKey("discount_percent") to
+                        Flag(
+                            key = flagKey("discount_percent"),
+                            enabled = true,
+                            defaultValue = number(0.0),
+                            rules =
+                                listOf(
+                                    Rule(
+                                        id = ruleId("01890f2e-7cc3-7cc3-8c4f-123456789abd"),
+                                        condition =
+                                            Condition.Predicate(
+                                                attributeKey = attributeKey("plan"),
+                                                operator = Operator.Eq,
+                                                value = RuleValue.string("team"),
+                                            ),
+                                        serve = number(15.0),
+                                    ),
+                                ),
+                        ),
+                ),
+        ),
+    )
+
+internal fun validListRuleSet() =
+    valid(
+        RuleSet(
+            version = version(1),
+            flags =
+                mapOf(
+                    flagKey("enabled_regions") to
+                        Flag(
+                            key = flagKey("enabled_regions"),
+                            enabled = true,
+                            defaultValue = RuleValue.list(listOf(RuleValue.string("US"))),
+                            rules =
+                                listOf(
+                                    Rule(
+                                        id = ruleId("01890f2e-7cc3-7cc3-8c4f-123456789abe"),
+                                        condition =
+                                            Condition.Predicate(
+                                                attributeKey = attributeKey("tier"),
+                                                operator = Operator.Eq,
+                                                value = RuleValue.string("enterprise"),
+                                            ),
+                                        serve = RuleValue.list(listOf(RuleValue.string("KR"), RuleValue.string("JP"))),
+                                    ),
+                                ),
+                        ),
+                ),
+        ),
+    )
+
 internal fun flagKey(value: String): FlagKey =
     when (val result = FlagKey.of(value)) {
         is Outcome.Err -> error("Invalid test flag key: $value")

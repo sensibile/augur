@@ -69,6 +69,19 @@ class RuleSetDraftHttpTest {
     }
 
     @Test
+    fun `returns bad request for malformed draft id`() {
+        mockMvc
+            .get("/rule-set-drafts/not-a-uuid") {
+                accept = MediaType.APPLICATION_JSON
+            }.andExpect {
+                status { isBadRequest() }
+                jsonPath("$.title") { value("Rule management request is invalid") }
+                jsonPath("$.code") { value("invalid_draft_id") }
+                jsonPath("$.detail") { value("Draft id must be a UUID.") }
+            }
+    }
+
+    @Test
     fun `returns unprocessable entity for invalid flag json`() {
         val created = mockMvc.createDraft()
         val draftId = requireJsonString(created.response.contentAsString, "draftId")
